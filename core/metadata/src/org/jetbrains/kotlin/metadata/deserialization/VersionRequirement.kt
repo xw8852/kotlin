@@ -91,7 +91,11 @@ class VersionRequirement(
                 else -> throw IllegalStateException("Unexpected declaration: ${proto::class.java}")
             }
 
-            val info = table[id] ?: return null
+            return create(id, nameResolver, table)
+        }
+
+        fun create(requirementId: Int, nameResolver: NameResolver, table: VersionRequirementTable): VersionRequirement? {
+            val info = table[requirementId] ?: return null
 
             val version = Version.decode(
                 if (info.hasVersion()) info.version else null,

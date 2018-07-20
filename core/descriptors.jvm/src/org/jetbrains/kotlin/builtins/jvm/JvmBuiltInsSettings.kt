@@ -100,8 +100,8 @@ open class JvmBuiltInsSettings(
             KotlinBuiltIns.isArrayOrPrimitiveArray(classDescriptor)
         ) {
             // Do not create clone for arrays deserialized from metadata in the old (1.0) runtime, because clone is declared there anyway
-            if (classDescriptor.classProto.functionList.any { functionProto ->
-                    classDescriptor.c.nameResolver.getName(functionProto.name) == CloneableClassScope.CLONE_NAME
+            if (classDescriptor.functionNameIds.any { functionNameId ->
+                    classDescriptor.c.nameResolver.getName(functionNameId) == CloneableClassScope.CLONE_NAME
                 }) {
                 return emptyList()
             }

@@ -29,6 +29,16 @@ import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeConstructor
 import java.util.*
 
+private class CompactedClassProto(
+    val flags: Int,
+    val versionRequirement: Int,
+    val constructorList: List<ProtoBuf.Constructor>,
+    val companionObjectName: Int?,
+    val sealedSubclassFqNameList: List<Int>,
+    val supertypes: List<ProtoBuf.Type>,
+    val functionNameIds: List<Int>
+)
+
 class DeserializedClassDescriptor(
     outerContext: DeserializationContext,
     val classProto: ProtoBuf.Class,
@@ -39,6 +49,21 @@ class DeserializedClassDescriptor(
     outerContext.storageManager,
     nameResolver.getClassId(classProto.fqName).shortClassName
 ) {
+    private val typeTable = TypeTable(classProto.typeTable)
+
+//    private val classProto =
+//        CompactedClassProto(
+//            classProto.flags,
+//            classProto.versionRequirement,
+//            classProto.constructorList,
+//            classProto.companionObjectName.takeIf { classProto.hasCompanionObjectName() },
+//            classProto.sealedSubclassFqNameList,
+//            classProto.supertypes(typeTable),
+//            classProto.functionList.map { it.name },
+//        )
+
+    val functionNameIds = classProto.getExtension()
+
     private val classId = nameResolver.getClassId(classProto.fqName)
 
     private val modality = ProtoEnumFlags.modality(Flags.MODALITY.get(classProto.flags))
@@ -52,8 +77,11 @@ class DeserializedClassDescriptor(
 
     private val staticScope = if (kind == ClassKind.ENUM_CLASS) StaticScopeForKotlinEnum(c.storageManager, this) else MemberScope.Empty
     private val typeConstructor = DeserializedClassTypeConstructor()
-    private val memberScope = DeserializedClassMemberScope()
-    private val enumEntries = if (kind == ClassKind.ENUM_CLASS) EnumEntryClassDescriptors() else null
+    private val memberScope = DeserializedClassMemberScope(
+        c, classProto.functionList, classProto.propertyList, classProto.typeAliasList,
+        classProto.nestedClassNameList
+    )
+    private val enumEntries = if (kind == ClassKind.ENUM_CLASS) EnumEntryClassDescriptors(classProto.enumEntryList) else null
 
     private val containingDeclaration = outerContext.containingDeclaration
     private val primaryConstructor = c.storageManager.createNullableLazyValue { computePrimaryConstructor() }
@@ -67,7 +95,7 @@ class DeserializedClassDescriptor(
     )
 
     val versionRequirement: VersionRequirement?
-        get() = VersionRequirement.create(classProto, c.nameResolver, c.versionRequirementTable)
+        get() = VersionRequirement.create(classProto.versionRequirement, c.nameResolver, c.versionRequirementTable)
 
     override val annotations =
         if (!Flags.HAS_ANNOTATIONS.get(classProto.flags)) {
@@ -130,9 +158,8 @@ class DeserializedClassDescriptor(
     override fun getConstructors() = constructors()
 
     private fun computeCompanionObjectDescriptor(): ClassDescriptor? {
-        if (!classProto.hasCompanionObjectName()) return null
-
-        val companionObjectName = c.nameResolver.getName(classProto.companionObjectName)
+        val companionObjectNameId = classProto.companionObjectName ?: return null
+        val companionObjectName = c.nameResolver.getName(companionObjectNameId)
         return memberScope.getContributedClassifier(companionObjectName, NoLookupLocation.FROM_DESERIALIZATION) as? ClassDescriptor
     }
 
@@ -169,7 +196,7 @@ class DeserializedClassDescriptor(
         }
 
         override fun computeSupertypes(): Collection<KotlinType> {
-            val result = classProto.supertypes(c.typeTable).map { supertypeProto ->
+            val result = classProto.supertypes.map { supertypeProto ->
                 c.typeDeserializer.type(supertypeProto)
             } + c.components.additionalClassPartsProvider.getSupertypes(this@DeserializedClassDescriptor)
 
@@ -196,13 +223,19 @@ class DeserializedClassDescriptor(
         override fun toString() = name.toString()
 
         override val supertypeLoopChecker: SupertypeLoopChecker
-            // TODO: inject implementation
+        // TODO: inject implementation
             get() = SupertypeLoopChecker.EMPTY
     }
 
-    private inner class DeserializedClassMemberScope : DeserializedMemberScope(
-        c, classProto.functionList, classProto.propertyList, classProto.typeAliasList,
-        classProto.nestedClassNameList.map(c.nameResolver::getName).let { { it } } // workaround KT-13454
+    private inner class DeserializedClassMemberScope(
+        c: DeserializationContext,
+        functionList: Collection<ProtoBuf.Function>,
+        propertyList: Collection<ProtoBuf.Property>,
+        typeAliasList: Collection<ProtoBuf.TypeAlias>,
+        nestedClassNameList: List<Int>
+    ) : DeserializedMemberScope(
+        c, functionList, propertyList, typeAliasList,
+        nestedClassNameList.map(c.nameResolver::getName).let { { it } } // workaround KT-13454
     ) {
         private val classDescriptor: DeserializedClassDescriptor get() = this@DeserializedClassDescriptor
 
@@ -303,8 +336,8 @@ class DeserializedClassDescriptor(
         }
     }
 
-    private inner class EnumEntryClassDescriptors {
-        private val enumEntryProtos = classProto.enumEntryList.associateBy { c.nameResolver.getName(it.name) }
+    private inner class EnumEntryClassDescriptors(enumEntryList: List<ProtoBuf.EnumEntry>) {
+        private val enumEntryProtos = enumEntryList.associateBy { c.nameResolver.getName(it.name) }
 
         private val enumEntryByName = c.storageManager.createMemoizedFunctionWithNullableValues<Name, ClassDescriptor> { name ->
 
@@ -319,26 +352,10 @@ class DeserializedClassDescriptor(
             }
         }
 
-        private val enumMemberNames = c.storageManager.createLazyValue { computeEnumMemberNames() }
+        private val enumMemberNames =
+            c.storageManager.createLazyValue { memberScope.getFunctionNames() + memberScope.getVariableNames() }
 
         fun findEnumEntry(name: Name): ClassDescriptor? = enumEntryByName(name)
-
-        private fun computeEnumMemberNames(): Set<Name> {
-            // NOTE: order of enum entry members should be irrelevant
-            // because enum entries are effectively invisible to user (as classes)
-            val result = HashSet<Name>()
-
-            for (supertype in getTypeConstructor().supertypes) {
-                for (descriptor in supertype.memberScope.getContributedDescriptors()) {
-                    if (descriptor is SimpleFunctionDescriptor || descriptor is PropertyDescriptor) {
-                        result.add(descriptor.name)
-                    }
-                }
-            }
-
-            return classProto.functionList.mapTo(result) { c.nameResolver.getName(it.name) } +
-                    classProto.propertyList.mapTo(result) { c.nameResolver.getName(it.name) }
-        }
 
         fun all(): Collection<ClassDescriptor> =
             enumEntryProtos.keys.mapNotNull { name -> findEnumEntry(name) }
