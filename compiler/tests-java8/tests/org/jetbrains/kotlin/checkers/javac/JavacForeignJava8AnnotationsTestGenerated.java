@@ -55,6 +55,11 @@ public class JavacForeignJava8AnnotationsTestGenerated extends AbstractJavacFore
             KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/jspecify"), Pattern.compile("^(.+)\\.kt$"), null, true);
         }
 
+        @TestMetadata("defaults.kt")
+        public void testDefaults() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/defaults.kt");
+        }
+
         @TestMetadata("simple.kt")
         public void testSimple() throws Exception {
             runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/simple.kt");
