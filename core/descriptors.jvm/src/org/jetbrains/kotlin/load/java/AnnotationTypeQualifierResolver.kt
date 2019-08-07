@@ -43,7 +43,8 @@ val MIGRATION_ANNOTATION_FQNAME = FqName("kotlin.annotations.jvm.UnderMigration"
 val DEFAULT_JSPECIFY_APPLICABILITY = listOf(
     AnnotationTypeQualifierResolver.QualifierApplicabilityType.FIELD,
     AnnotationTypeQualifierResolver.QualifierApplicabilityType.METHOD_RETURN_TYPE,
-    AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER
+    AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER,
+    AnnotationTypeQualifierResolver.QualifierApplicabilityType.TYPE_PARAMETER_BOUNDS
 )
 
 val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
@@ -74,7 +75,7 @@ val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
 
 class AnnotationTypeQualifierResolver(storageManager: StorageManager, private val jsr305State: Jsr305State) {
     enum class QualifierApplicabilityType {
-        METHOD_RETURN_TYPE, VALUE_PARAMETER, FIELD, TYPE_USE
+        METHOD_RETURN_TYPE, VALUE_PARAMETER, FIELD, TYPE_USE, TYPE_PARAMETER_BOUNDS
     }
 
     class TypeQualifierWithApplicability(
@@ -84,8 +85,15 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager, private va
         operator fun component1() = typeQualifier
         operator fun component2() = QualifierApplicabilityType.values().filter(this::isApplicableTo)
 
-        private fun isApplicableTo(elementType: QualifierApplicabilityType) =
-            isApplicableConsideringMask(QualifierApplicabilityType.TYPE_USE) || isApplicableConsideringMask(elementType)
+        private fun isApplicableTo(elementType: QualifierApplicabilityType): Boolean {
+            if (isApplicableConsideringMask(elementType)) return true
+
+            // We explicitly state that while JSR-305 TYPE_USE annotations effectively should be applied to every type
+            // they are not applicable for type parameter bounds because it would be a breaking change otherwise.
+            // Only defaulting annotations from codeanalysis are applicable
+            return isApplicableConsideringMask(QualifierApplicabilityType.TYPE_USE) &&
+                    elementType != QualifierApplicabilityType.TYPE_PARAMETER_BOUNDS
+        }
 
         private fun isApplicableConsideringMask(elementType: QualifierApplicabilityType) =
             (applicability and (1 shl elementType.ordinal)) != 0
