@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.load.java.*
 import org.jetbrains.kotlin.load.java.JvmAnnotationNames.DEFAULT_ANNOTATION_MEMBER_NAME
 import org.jetbrains.kotlin.load.java.lazy.NullabilityQualifierWithApplicability
 import org.jetbrains.kotlin.name.ClassId
+import org.jetbrains.kotlin.load.java.lazy.JavaDefaultQualifiers
 import org.jetbrains.kotlin.utils.Jsr305State
 import org.jetbrains.kotlin.utils.ReportLevel
 import org.jetbrains.kotlin.utils.addToStdlib.firstNotNullResult
@@ -64,15 +65,17 @@ class FirAnnotationTypeQualifierResolver(private val session: FirSession, privat
         return resolveTypeQualifierNickname(annotationClass)
     }
 
-    fun resolveQualifierBuiltInDefaultAnnotation(annotationCall: FirAnnotationCall): NullabilityQualifierWithApplicability? {
+    fun resolveQualifierBuiltInDefaultAnnotation(annotationCall: FirAnnotationCall): JavaDefaultQualifiers? {
         if (jsr305State.disabled) {
             return null
         }
 
         val annotationClassId = annotationCall.classId
-        return BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATION_IDS[annotationClassId]?.let { (qualifier, applicability) ->
+        return BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATION_IDS[annotationClassId]?.let { qualifierForDefaultingAnnotation ->
             val state = resolveJsr305ReportLevel(annotationCall).takeIf { it != ReportLevel.IGNORE } ?: return null
-            return NullabilityQualifierWithApplicability(qualifier.copy(isForWarningOnly = state.isWarning), applicability)
+            return qualifierForDefaultingAnnotation.copy(
+                nullabilityQualifier = qualifierForDefaultingAnnotation.nullabilityQualifier.copy(isForWarningOnly = state.isWarning)
+            )
         }
     }
 

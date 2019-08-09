@@ -13,6 +13,17 @@ import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.expressions.builder.buildConstExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildQualifiedAccessExpression
+import org.jetbrains.kotlin.fir.declarations.FirCallableMemberDeclaration
+import org.jetbrains.kotlin.fir.declarations.FirEnumEntry
+import org.jetbrains.kotlin.fir.declarations.FirRegularClass
+import org.jetbrains.kotlin.fir.declarations.FirValueParameter
+import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
+import org.jetbrains.kotlin.fir.expressions.FirConstExpression
+import org.jetbrains.kotlin.fir.expressions.FirExpression
+import org.jetbrains.kotlin.fir.expressions.impl.FirConstExpressionImpl
+import org.jetbrains.kotlin.fir.expressions.impl.FirQualifiedAccessExpressionImpl
+import org.jetbrains.kotlin.fir.expressions.resolvedFqName
+import org.jetbrains.kotlin.fir.java.JavaTypeParameterStack
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaClass
 import org.jetbrains.kotlin.fir.java.declarations.FirJavaField
 import org.jetbrains.kotlin.fir.references.builder.buildResolvedNamedReference
@@ -31,6 +42,7 @@ import org.jetbrains.kotlin.load.java.JvmAnnotationNames.DEFAULT_VALUE_FQ_NAME
 import org.jetbrains.kotlin.load.java.descriptors.AnnotationDefaultValue
 import org.jetbrains.kotlin.load.java.descriptors.NullDefaultValue
 import org.jetbrains.kotlin.load.java.descriptors.StringDefaultValue
+import org.jetbrains.kotlin.load.java.lazy.JavaDefaultQualifiers
 import org.jetbrains.kotlin.load.java.structure.JavaClassifierType
 import org.jetbrains.kotlin.load.java.structure.JavaType
 import org.jetbrains.kotlin.load.java.typeEnhancement.*
@@ -244,7 +256,7 @@ private fun ConeClassifierLookupTag.enhanceMutability(
 
 internal data class TypeAndDefaultQualifiers(
     val type: FirTypeRef?, // null denotes '*' here
-    val defaultQualifiers: JavaTypeQualifiers?
+    val defaultQualifiers: JavaDefaultQualifiers?
 )
 
 internal fun FirTypeRef.typeArguments(): List<FirTypeProjection> =

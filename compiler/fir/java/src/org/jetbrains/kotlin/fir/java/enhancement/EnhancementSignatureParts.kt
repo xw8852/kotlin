@@ -22,6 +22,7 @@ import org.jetbrains.kotlin.load.java.MUTABLE_ANNOTATIONS
 import org.jetbrains.kotlin.load.java.READ_ONLY_ANNOTATIONS
 import org.jetbrains.kotlin.load.java.structure.JavaClassifierType
 import org.jetbrains.kotlin.load.java.structure.JavaTypeParameter
+import org.jetbrains.kotlin.load.java.lazy.JavaDefaultQualifiers
 import org.jetbrains.kotlin.load.java.structure.JavaWildcardType
 import org.jetbrains.kotlin.load.java.typeEnhancement.*
 import org.jetbrains.kotlin.name.ClassId
@@ -175,7 +176,7 @@ internal class EnhancementSignatureParts(
 
     private fun FirTypeRef?.extractQualifiersFromAnnotations(
         isHeadTypeConstructor: Boolean,
-        defaultQualifiersForType: JavaTypeQualifiers?,
+        defaultQualifiersForType: JavaDefaultQualifiers?,
         jsr305State: Jsr305State
     ): JavaTypeQualifiers {
         val composedAnnotation =
@@ -199,10 +200,10 @@ internal class EnhancementSignatureParts(
                 defaultQualifiersForType
 
         val nullabilityInfo = composedAnnotation.extractNullability(typeQualifierResolver, jsr305State)
-            ?: defaultTypeQualifier?.nullability?.let { nullability ->
+            ?: defaultTypeQualifier?.nullabilityQualifier?.let { nullability ->
                 NullabilityQualifierWithMigrationStatus(
-                    nullability,
-                    defaultTypeQualifier.isNullabilityQualifierForWarning
+                    nullability.qualifier,
+                    nullability.isForWarningOnly
                 )
             }
 
@@ -228,7 +229,7 @@ internal class EnhancementSignatureParts(
     private fun FirTypeRef?.computeQualifiersForOverride(
         session: FirSession,
         fromSupertypes: Collection<FirTypeRef>,
-        defaultQualifiersForType: JavaTypeQualifiers?,
+        defaultQualifiersForType: JavaDefaultQualifiers?,
         isHeadTypeConstructor: Boolean,
         jsr305State: Jsr305State
     ): JavaTypeQualifiers {

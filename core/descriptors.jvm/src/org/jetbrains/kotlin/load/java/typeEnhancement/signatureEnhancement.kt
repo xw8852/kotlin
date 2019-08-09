@@ -25,6 +25,7 @@ import org.jetbrains.kotlin.descriptors.annotations.composeAnnotations
 import org.jetbrains.kotlin.load.java.*
 import org.jetbrains.kotlin.load.java.descriptors.*
 import org.jetbrains.kotlin.load.java.lazy.LazyJavaResolverContext
+import org.jetbrains.kotlin.load.java.lazy.JavaDefaultQualifiers
 import org.jetbrains.kotlin.load.java.lazy.copyWithNewDefaultTypeQualifiers
 import org.jetbrains.kotlin.load.java.lazy.descriptors.isJavaField
 import org.jetbrains.kotlin.load.kotlin.SignatureBuildingComponents
@@ -314,7 +315,7 @@ class SignatureEnhancement(
 
         private fun KotlinType.extractQualifiersFromAnnotations(
             isHeadTypeConstructor: Boolean,
-            defaultQualifiersForType: JavaTypeQualifiers?
+            defaultQualifiersForType: JavaDefaultQualifiers?
         ): JavaTypeQualifiers {
             val composedAnnotation =
                 if (isHeadTypeConstructor && typeContainer != null)
@@ -335,10 +336,10 @@ class SignatureEnhancement(
 
             val nullabilityInfo =
                 composedAnnotation.extractNullability()
-                    ?: defaultTypeQualifier?.nullability?.let {
+                    ?: defaultTypeQualifier?.nullabilityQualifier?.let { nullabilityQualifierWithMigrationStatus ->
                         NullabilityQualifierWithMigrationStatus(
-                            defaultTypeQualifier.nullability,
-                            defaultTypeQualifier.isNullabilityQualifierForWarning
+                            nullabilityQualifierWithMigrationStatus.qualifier,
+                            nullabilityQualifierWithMigrationStatus.isForWarningOnly
                         )
                     }
 
@@ -423,7 +424,7 @@ class SignatureEnhancement(
 
         private fun KotlinType.computeQualifiersForOverride(
             fromSupertypes: Collection<KotlinType>,
-            defaultQualifiersForType: JavaTypeQualifiers?,
+            defaultQualifiersForType: JavaDefaultQualifiers?,
             isHeadTypeConstructor: Boolean
         ): JavaTypeQualifiers {
             val superQualifiers = fromSupertypes.map { it.extractQualifiers() }
@@ -549,5 +550,5 @@ fun Set<NullabilityQualifier>.select(own: NullabilityQualifier?, isCovariant: Bo
 
 private data class TypeAndDefaultQualifiers(
     val type: KotlinType,
-    val defaultQualifiers: JavaTypeQualifiers?
+    val defaultQualifiers: JavaDefaultQualifiers?
 )
