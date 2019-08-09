@@ -194,8 +194,11 @@ private fun LazyJavaResolverContext.extractDefaultNullabilityQualifier(
 
 data class JavaDefaultQualifiers(
     val nullabilityQualifier: NullabilityQualifierWithMigrationStatus,
-    val qualifierApplicabilityTypes: Collection<AnnotationTypeQualifierResolver.QualifierApplicabilityType>
-)
+    val qualifierApplicabilityTypes: Collection<AnnotationTypeQualifierResolver.QualifierApplicabilityType>,
+    val affectsTypeParameterBasedTypes: Boolean = nullabilityQualifier.qualifier == NullabilityQualifier.NOT_NULL
+) {
+    val makesTypeParameterNotNull get() = nullabilityQualifier.qualifier == NullabilityQualifier.NOT_NULL && affectsTypeParameterBasedTypes
+}
 
 fun LazyJavaResolverContext.replaceComponents(
     components: JavaResolverComponents

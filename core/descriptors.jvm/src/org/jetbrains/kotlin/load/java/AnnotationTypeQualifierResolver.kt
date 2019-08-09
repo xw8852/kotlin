@@ -65,7 +65,8 @@ val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
     ),
     JSPECIFY_DEFAULT_NOT_NULL to JavaDefaultQualifiers(
         NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NOT_NULL),
-        DEFAULT_JSPECIFY_APPLICABILITY
+        DEFAULT_JSPECIFY_APPLICABILITY,
+        affectsTypeParameterBasedTypes = false
     ),
     JSPECIFY_DEFAULT_NULLNESS_UNKNOWN to JavaDefaultQualifiers(
         NullabilityQualifierWithMigrationStatus(NullabilityQualifier.FORCE_FLEXIBILITY),
