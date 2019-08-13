@@ -55,6 +55,11 @@ public class ForeignJava8AnnotationsNoAnnotationInClasspathTestGenerated extends
             KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/jspecify"), Pattern.compile("^(.+)\\.kt$"), null, true);
         }
 
+        @TestMetadata("annotatedWildcards.kt")
+        public void testAnnotatedWildcards() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/annotatedWildcards.kt");
+        }
+
         @TestMetadata("defaults.kt")
         public void testDefaults() throws Exception {
             runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/defaults.kt");
@@ -83,6 +88,11 @@ public class ForeignJava8AnnotationsNoAnnotationInClasspathTestGenerated extends
         @TestMetadata("unknownNullnessTypeParameter.kt")
         public void testUnknownNullnessTypeParameter() throws Exception {
             runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/unknownNullnessTypeParameter.kt");
+        }
+
+        @TestMetadata("wildcardsWithDefault.kt")
+        public void testWildcardsWithDefault() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/wildcardsWithDefault.kt");
         }
     }
 

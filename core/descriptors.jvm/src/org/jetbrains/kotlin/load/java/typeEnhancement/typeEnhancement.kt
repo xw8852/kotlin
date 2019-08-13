@@ -39,6 +39,7 @@ import org.jetbrains.kotlin.types.model.KotlinTypeMarker
 import org.jetbrains.kotlin.types.refinement.TypeRefinement
 import org.jetbrains.kotlin.types.typeUtil.createProjection
 import org.jetbrains.kotlin.types.typeUtil.isTypeParameter
+import org.jetbrains.kotlin.types.typeUtil.makeNotNullable
 
 fun KotlinType.hasEnhancedNullability(): Boolean =
     SimpleClassicTypeSystemContext.hasEnhancedNullability(this)
@@ -116,8 +117,13 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
         var wereChanges = enhancedMutabilityAnnotations != null
         val enhancedArguments = arguments.mapIndexed { localArgIndex, arg ->
             if (arg.isStarProjection) {
-                globalArgIndex++
+                val qualifiersForStarProjection = qualifiers(globalArgIndex)globalArgIndex++
+    if (qualifiersForStarProjection.nullability == NOT_NULL) {
+                val enhanced = arg.type.unwrap().makeNotNullable()
+                createProjection(enhanced, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
+            } else {
                 TypeUtils.makeStarProjection(enhancedClassifier.typeConstructor.parameters[localArgIndex])
+            }
             } else {
                 val enhanced = arg.type.unwrap().enhancePossiblyFlexible(qualifiers, globalArgIndex)
                 wereChanges = wereChanges || enhanced.wereChanges
