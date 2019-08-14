@@ -11,7 +11,7 @@ import org.jetbrains.kotlin.load.java.AnnotationTypeQualifierResolver
 import org.jetbrains.kotlin.load.java.lazy.JavaDefaultQualifiers
 import org.jetbrains.kotlin.load.java.lazy.JavaTypeQualifiersByElementType
 import org.jetbrains.kotlin.load.java.lazy.QualifierByApplicabilityType
-import org.jetbrains.kotlin.utils.Jsr305State
+import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 
 class FirJavaEnhancementContext private constructor(
     val session: FirSession,
@@ -27,7 +27,7 @@ class FirJavaEnhancementContext private constructor(
 
 fun extractDefaultNullabilityQualifier(
     typeQualifierResolver: FirAnnotationTypeQualifierResolver,
-    jsr305State: Jsr305State,
+    javaTypeEnhancementState: JavaTypeEnhancementState,
     annotationCall: FirAnnotationCall
 ): JavaDefaultQualifiers? {
     typeQualifierResolver.resolveQualifierBuiltInDefaultAnnotation(annotationCall)?.let { return it }
@@ -45,7 +45,7 @@ fun extractDefaultNullabilityQualifier(
     }
 
     val nullabilityQualifier = typeQualifier.extractNullability(
-        typeQualifierResolver, jsr305State
+        typeQualifierResolver, javaTypeEnhancementState
     )?.copy(isForWarningOnly = jsr305ReportLevel.isWarning) ?: return null
 
     return JavaDefaultQualifiers(nullabilityQualifier, applicability)
@@ -53,7 +53,7 @@ fun extractDefaultNullabilityQualifier(
 
 fun FirJavaEnhancementContext.computeNewDefaultTypeQualifiers(
     typeQualifierResolver: FirAnnotationTypeQualifierResolver,
-    jsr305State: Jsr305State,
+    javaTypeEnhancementState: JavaTypeEnhancementState,
     additionalAnnotations: List<FirAnnotationCall>
 ): JavaTypeQualifiersByElementType? {
     if (typeQualifierResolver.disabled) return defaultTypeQualifiers
@@ -62,7 +62,7 @@ fun FirJavaEnhancementContext.computeNewDefaultTypeQualifiers(
         additionalAnnotations.mapNotNull { annotationCall ->
             extractDefaultNullabilityQualifier(
                 typeQualifierResolver,
-                jsr305State,
+                javaTypeEnhancementState,
                 annotationCall
             )
         }
@@ -86,12 +86,12 @@ fun FirJavaEnhancementContext.computeNewDefaultTypeQualifiers(
 
 fun FirJavaEnhancementContext.copyWithNewDefaultTypeQualifiers(
     typeQualifierResolver: FirAnnotationTypeQualifierResolver,
-    jsr305State: Jsr305State,
+    javaTypeEnhancementState: JavaTypeEnhancementState,
     additionalAnnotations: List<FirAnnotationCall>
 ): FirJavaEnhancementContext =
     when {
         additionalAnnotations.isEmpty() -> this
         else -> FirJavaEnhancementContext(session) {
-            computeNewDefaultTypeQualifiers(typeQualifierResolver, jsr305State, additionalAnnotations)
+            computeNewDefaultTypeQualifiers(typeQualifierResolver, javaTypeEnhancementState, additionalAnnotations)
         }
     }
