@@ -28,7 +28,7 @@ import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
 import org.jetbrains.kotlin.analyzer.LanguageSettingsProvider
 import org.jetbrains.kotlin.analyzer.ModuleInfo
-import org.jetbrains.kotlin.cli.common.arguments.Jsr305Parser
+import org.jetbrains.kotlin.cli.common.arguments.JavaTypeEnhancementStateParser
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.parseCommandLineArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
@@ -58,7 +58,7 @@ object IDELanguageSettingsProvider : LanguageSettingsProvider {
         when (moduleInfo) {
             is ModuleSourceInfo -> moduleInfo.module.languageVersionSettings
             is LibraryInfo -> project.getLanguageVersionSettings(
-                javaTypeEnhancementState = computeJsr305State(project), isReleaseCoroutines = isReleaseCoroutines
+                javaTypeEnhancementState = computeJavaTypeEnhancementState(project), isReleaseCoroutines = isReleaseCoroutines
             )
             is ScriptModuleInfo -> {
                 getLanguageSettingsForScripts(
@@ -78,13 +78,13 @@ object IDELanguageSettingsProvider : LanguageSettingsProvider {
             else -> project.getLanguageVersionSettings()
         }
 
-    private fun computeJsr305State(project: Project): Jsr305State? {
-        var result: Jsr305State? = null
+    private fun computeJavaTypeEnhancementState(project: Project): JavaTypeEnhancementState? {
+        var result: JavaTypeEnhancementState? = null
         for (module in ModuleManager.getInstance(project).modules) {
             val settings = KotlinFacetSettingsProvider.getInstance(project)?.getSettings(module) ?: continue
             val compilerArguments = settings.mergedCompilerArguments as? K2JVMCompilerArguments ?: continue
 
-            result = Jsr305Parser(MessageCollector.NONE).parse(
+            result = JavaTypeEnhancementStateParser(MessageCollector.NONE).parse(
                 compilerArguments.jsr305,
                 compilerArguments.supportCompatqualCheckerFrameworkAnnotations
             )
