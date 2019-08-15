@@ -112,6 +112,7 @@ private fun SimpleType.enhanceInflexible(
 
     var globalArgIndex = index + 1
     var wereChanges = enhancedMutabilityAnnotations != null
+    var wereArgsWithEnhancement = false
     val enhancedArguments = arguments.mapIndexed { localArgIndex, arg ->
         if (arg.isStarProjection) {
             val qualifiersForStarProjection = qualifiers(globalArgIndex)
@@ -126,6 +127,7 @@ private fun SimpleType.enhanceInflexible(
         } else {
             val enhanced = arg.type.unwrap().enhancePossiblyFlexible(qualifiers, globalArgIndex)
             wereChanges = wereChanges || enhanced.wereChanges
+            wereArgsWithEnhancement = wereArgsWithEnhancement || enhanced.type is TypeWithEnhancement
             globalArgIndex += enhanced.subtreeSize
             createProjection(enhanced.type, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
         }
@@ -152,7 +154,12 @@ private fun SimpleType.enhanceInflexible(
 
     val enhancement = if (effectiveQualifiers.isNotNullTypeParameter) NotNullTypeParameter(enhancedType) else enhancedType
     val nullabilityForWarning = enhancedNullabilityAnnotations != null && effectiveQualifiers.isNullabilityQualifierForWarning
-    val result = if (nullabilityForWarning) wrapEnhancement(enhancement) else enhancement
+    val result =
+        if (nullabilityForWarning /*|| wereArgsWithEnhancement*/)
+            wrapEnhancement(enhancement)
+        else
+            enhancement
+
 
     return SimpleResult(result as SimpleType, subtreeSize, wereChanges = true)
 }

@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm
 import org.jetbrains.kotlin.resolve.scopes.receivers.ExpressionReceiver
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValue
 import org.jetbrains.kotlin.types.*
+import org.jetbrains.kotlin.types.checker.NewKotlinTypeChecker
 import org.jetbrains.kotlin.types.expressions.SenselessComparisonChecker
 
 class JavaNullabilityChecker : AdditionalTypeChecker {
@@ -45,6 +46,7 @@ class JavaNullabilityChecker : AdditionalTypeChecker {
         expressionTypeWithSmartCast: KotlinType,
         c: ResolutionContext<*>
     ) {
+        var isWarningReported = false
         doCheckType(
             expressionType,
             c.expectedType,
@@ -52,6 +54,11 @@ class JavaNullabilityChecker : AdditionalTypeChecker {
             c.dataFlowInfo
         ) { expectedType, actualType ->
             c.trace.report(ErrorsJvm.NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS.on(expression, expectedType, actualType))
+            isWarningReported = true
+        }
+
+        if (!isWarningReported) {
+            checkTypeArguments(c, expression, expressionType, c.expectedType)
         }
 
         when (expression) {
@@ -106,6 +113,24 @@ class JavaNullabilityChecker : AdditionalTypeChecker {
                     }
                 }
         }
+    }
+
+    private fun checkTypeArguments(
+        c: ResolutionContext<*>, expression: KtExpression,
+        expressionType: KotlinType, expectedType: KotlinType
+    ) {
+        return
+        if (TypeUtils.noExpectedType(expectedType)) {
+            return
+        }
+
+        val expressionTypeEnhanced = expressionType.unwrapEnhancement() as? SimpleType ?: return
+        val expectedTypeEnhanced = expectedType.unwrapEnhancement() as? SimpleType ?: return
+
+        if (expressionType === expressionTypeEnhanced && expectedType === expectedTypeEnhanced) return
+        if (NewKotlinTypeChecker.Default.isSubtypeOf(expressionTypeEnhanced, expectedTypeEnhanced)) return
+
+        c.trace.report(ErrorsJvm.NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS.on(expression, expectedTypeEnhanced, expectedTypeEnhanced))
     }
 
     override fun checkReceiver(
