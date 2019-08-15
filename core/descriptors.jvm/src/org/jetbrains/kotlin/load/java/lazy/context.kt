@@ -43,6 +43,7 @@ import org.jetbrains.kotlin.resolve.sam.SamConversionResolver
 import org.jetbrains.kotlin.serialization.deserialization.ErrorReporter
 import org.jetbrains.kotlin.storage.StorageManager
 import org.jetbrains.kotlin.types.checker.NewKotlinTypeChecker
+import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 import java.util.*
 
 class JavaResolverComponents(
@@ -66,7 +67,8 @@ class JavaResolverComponents(
     val signatureEnhancement: SignatureEnhancement,
     val javaClassesTracker: JavaClassesTracker,
     val settings: JavaResolverSettings,
-    val kotlinTypeChecker: NewKotlinTypeChecker
+    val kotlinTypeChecker: NewKotlinTypeChecker,
+    val javaTypeEnhancementState: JavaTypeEnhancementState
 ) {
     fun replace(
         javaResolverCache: JavaResolverCache = this.javaResolverCache
@@ -76,7 +78,8 @@ class JavaResolverComponents(
         javaPropertyInitializerEvaluator, samConversionResolver, sourceElementFactory,
         moduleClassResolver, packagePartProvider, supertypeLoopChecker, lookupTracker, module, reflectionTypes,
         annotationTypeQualifierResolver, signatureEnhancement, javaClassesTracker, settings,
-        kotlinTypeChecker
+        kotlinTypeChecker,
+        javaTypeEnhancementState
     )
 }
 
@@ -143,7 +146,7 @@ fun LazyJavaResolverContext.child(
 fun LazyJavaResolverContext.computeNewDefaultTypeQualifiers(
     additionalAnnotations: Annotations
 ): JavaTypeQualifiersByElementType? {
-    if (components.annotationTypeQualifierResolver.disabled) return defaultTypeQualifiers
+    if (components.javaTypeEnhancementState.disabledDefaultAnnotations) return defaultTypeQualifiers
 
     val defaultQualifiers =
         additionalAnnotations.mapNotNull(this::extractDefaultNullabilityQualifier)

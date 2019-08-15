@@ -48,18 +48,7 @@ val DEFAULT_JSPECIFY_APPLICABILITY = listOf(
     AnnotationTypeQualifierResolver.QualifierApplicabilityType.TYPE_USE
 )
 
-val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
-    FqName("javax.annotation.ParametersAreNullableByDefault") to
-            JavaDefaultQualifiers(
-                NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NULLABLE),
-                listOf(AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER)
-            ),
-    FqName("javax.annotation.ParametersAreNonnullByDefault") to
-            JavaDefaultQualifiers(
-                NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NOT_NULL),
-                listOf(AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER)
-            ),
-
+val CODE_ANALYSIS_DEFAULT_ANNOTATIONS = mapOf(
     JSPECIFY_DEFAULT_NULLABLE to JavaDefaultQualifiers(
         NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NULLABLE),
         DEFAULT_JSPECIFY_APPLICABILITY
@@ -74,6 +63,19 @@ val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
         DEFAULT_JSPECIFY_APPLICABILITY
     )
 )
+
+val BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS = mapOf(
+    FqName("javax.annotation.ParametersAreNullableByDefault") to
+            JavaDefaultQualifiers(
+                NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NULLABLE),
+                listOf(AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER)
+            ),
+    FqName("javax.annotation.ParametersAreNonnullByDefault") to
+            JavaDefaultQualifiers(
+                NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NOT_NULL),
+                listOf(AnnotationTypeQualifierResolver.QualifierApplicabilityType.VALUE_PARAMETER)
+            )
+) + CODE_ANALYSIS_DEFAULT_ANNOTATIONS
 
 class AnnotationTypeQualifierResolver(storageManager: StorageManager, private val javaTypeEnhancementState: JavaTypeEnhancementState) {
     enum class QualifierApplicabilityType {
@@ -128,16 +130,24 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager, private va
     }
 
     fun resolveQualifierBuiltInDefaultAnnotation(annotationDescriptor: AnnotationDescriptor): JavaDefaultQualifiers? {
-        if (javaTypeEnhancementState.disabledJsr305) {
+        if (javaTypeEnhancementState.disabledDefaultAnnotations) {
             return null
         }
 
         return BUILT_IN_TYPE_QUALIFIER_DEFAULT_ANNOTATIONS[annotationDescriptor.fqName]?.let { qualifierForDefaultingAnnotation ->
-            val state = resolveJsr305AnnotationState(annotationDescriptor).takeIf { it != ReportLevel.IGNORE } ?: return null
+            val state = resolveDefaultAnnotationState(annotationDescriptor).takeIf { it != ReportLevel.IGNORE } ?: return null
             return qualifierForDefaultingAnnotation.copy(
                 nullabilityQualifier = qualifierForDefaultingAnnotation.nullabilityQualifier.copy(isForWarningOnly = state.isWarning)
             )
         }
+    }
+
+    private fun resolveDefaultAnnotationState(annotationDescriptor: AnnotationDescriptor): ReportLevel {
+        if (annotationDescriptor.fqName in CODE_ANALYSIS_DEFAULT_ANNOTATIONS) {
+            return javaTypeEnhancementState.codeAnalysisReportLevel
+        }
+
+        return resolveJsr305AnnotationState(annotationDescriptor)
     }
 
     fun resolveTypeQualifierDefaultAnnotation(annotationDescriptor: AnnotationDescriptor): TypeQualifierWithApplicability? {
@@ -205,8 +215,6 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager, private va
             )
             else -> emptyList()
         }
-
-    val disabled: Boolean = javaTypeEnhancementState.disabledJsr305
 }
 
 val BUILT_IN_TYPE_QUALIFIER_FQ_NAMES = setOf(JAVAX_NONNULL_ANNOTATION, JAVAX_CHECKFORNULL_ANNOTATION)
