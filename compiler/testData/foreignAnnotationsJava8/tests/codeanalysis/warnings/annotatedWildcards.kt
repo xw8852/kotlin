@@ -4,7 +4,7 @@
 
 import codeanalysis.experimental.annotations.*;
 
-public class A<T extends @NotNull Object, E extends @Nullable Object, F extends @UnknownNullness Object> {
+public class A<T extends @NotNull Object, E extends @Nullable Object, F extends @NullnessUnknown Object> {
 }
 
 // FILE: B.java

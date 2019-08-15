@@ -7,7 +7,7 @@ public open class A {
     @codeanalysis.experimental.annotations.Nullable public final var field: kotlin.String!
     @codeanalysis.experimental.annotations.NotNull public open fun bar(): kotlin.String!
     public open override /*1*/ /*fake_override*/ fun equals(/*0*/ other: kotlin.Any?): kotlin.Boolean
-    @codeanalysis.experimental.annotations.Nullable public open fun foo(/*0*/ @codeanalysis.experimental.annotations.NotNull x: kotlin.String!, /*1*/ @codeanalysis.experimental.annotations.UnknownNullness y: kotlin.CharSequence!): kotlin.String!
+    @codeanalysis.experimental.annotations.Nullable public open fun foo(/*0*/ @codeanalysis.experimental.annotations.NotNull x: kotlin.String!, /*1*/ @codeanalysis.experimental.annotations.NullnessUnknown y: kotlin.CharSequence!): kotlin.String!
     public open override /*1*/ /*fake_override*/ fun hashCode(): kotlin.Int
     public open override /*1*/ /*fake_override*/ fun toString(): kotlin.String
 }
