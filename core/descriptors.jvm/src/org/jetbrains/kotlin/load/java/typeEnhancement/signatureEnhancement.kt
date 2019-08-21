@@ -38,6 +38,7 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.firstArgument
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameOrNull
 import org.jetbrains.kotlin.types.*
 import org.jetbrains.kotlin.types.checker.KotlinTypeChecker
+import org.jetbrains.kotlin.types.typeUtil.contains
 import org.jetbrains.kotlin.types.typeUtil.isTypeParameter
 import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 import org.jetbrains.kotlin.utils.ReportLevel
@@ -245,6 +246,8 @@ class SignatureEnhancement(
         context: LazyJavaResolverContext
     ): List<KotlinType> {
         return bounds.map { bound ->
+            if (bound.contains { it is RawType }) return@map bound
+
             SignatureParts(
                 typeParameter, bound, emptyList(), false, context,
                 AnnotationTypeQualifierResolver.QualifierApplicabilityType.TYPE_PARAMETER_BOUNDS,
