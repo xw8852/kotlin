@@ -28,6 +28,12 @@ class IrScriptImpl(
     override val endOffset: Int get() = UNDEFINED_OFFSET
     override var origin: IrDeclarationOrigin = SCRIPT_ORIGIN
 
+    constructor(symbol: IrScriptSymbol, name: Name) : this(UNDEFINED_OFFSET, UNDEFINED_OFFSET, symbol, name)
+
+    init {
+        symbol.bind(this)
+    }
+
     private var _parent: IrDeclarationParent? = null
     override var parent: IrDeclarationParent
         get() = _parent
