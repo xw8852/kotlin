@@ -18,13 +18,13 @@ package org.jetbrains.kotlin.load.java
 
 import org.jetbrains.kotlin.name.FqName
 
-val CODE_ANALYSIS_NULLABLE = FqName("codeanalysis.annotations.Nullable")
-val CODE_ANALYSIS_NOT_NULL = FqName("codeanalysis.annotations.NotNull")
-val CODE_ANALYSIS_NULLNESS_UNKNOWN = FqName("codeanalysis.annotations.NullnessUnknown")
+val JSPECIFY_NULLABLE = FqName("jspecify.annotations.Nullable")
+val JSPECIFY_NOT_NULL = FqName("jspecify.annotations.NotNull")
+val JSPECIFY_NULLNESS_UNKNOWN = FqName("jspecify.annotations.NullnessUnknown")
 
-val CODE_ANALYSIS_DEFAULT_NULLABLE = FqName("codeanalysis.annotations.DefaultNullable")
-val CODE_ANALYSIS_DEFAULT_NOT_NULL = FqName("codeanalysis.annotations.DefaultNotNull")
-val CODE_ANALYSIS_DEFAULT_NULLNESS_UNKNOWN = FqName("codeanalysis.annotations.DefaultNullnessUnknown")
+val JSPECIFY_DEFAULT_NULLABLE = FqName("jspecify.annotations.DefaultNullable")
+val JSPECIFY_DEFAULT_NOT_NULL = FqName("jspecify.annotations.DefaultNotNull")
+val JSPECIFY_DEFAULT_NULLNESS_UNKNOWN = FqName("jspecify.annotations.DefaultNullnessUnknown")
 
 val NULLABLE_ANNOTATIONS = listOf(
     JvmAnnotationNames.JETBRAINS_NULLABLE_ANNOTATION,
@@ -40,7 +40,7 @@ val NULLABLE_ANNOTATIONS = listOf(
     FqName("edu.umd.cs.findbugs.annotations.Nullable"),
     FqName("edu.umd.cs.findbugs.annotations.PossiblyNull"),
     FqName("io.reactivex.annotations.Nullable"),
-    CODE_ANALYSIS_NULLABLE
+    JSPECIFY_NULLABLE
 )
 
 val JAVAX_NONNULL_ANNOTATION = FqName("javax.annotation.Nonnull")
@@ -57,7 +57,7 @@ val NOT_NULL_ANNOTATIONS = listOf(
     FqName("org.checkerframework.checker.nullness.qual.NonNull"),
     FqName("lombok.NonNull"),
     FqName("io.reactivex.annotations.NonNull"),
-    CODE_ANALYSIS_NOT_NULL
+    JSPECIFY_NOT_NULL
 )
 
 val COMPATQUAL_NULLABLE_ANNOTATION = FqName("org.checkerframework.checker.nullness.compatqual.NullableDecl")
@@ -74,12 +74,12 @@ val NULLABILITY_ANNOTATIONS: Set<FqName> = mutableSetOf<FqName>() +
         COMPATQUAL_NONNULL_ANNOTATION +
         ANDROIDX_RECENTLY_NULLABLE_ANNOTATION +
         ANDROIDX_RECENTLY_NON_NULL_ANNOTATION +
-        CODE_ANALYSIS_NULLABLE +
-        CODE_ANALYSIS_NOT_NULL +
-        CODE_ANALYSIS_NULLNESS_UNKNOWN +
-        CODE_ANALYSIS_DEFAULT_NULLABLE +
-        CODE_ANALYSIS_DEFAULT_NOT_NULL +
-        CODE_ANALYSIS_DEFAULT_NULLNESS_UNKNOWN
+        JSPECIFY_NULLABLE +
+        JSPECIFY_NOT_NULL +
+        JSPECIFY_NULLNESS_UNKNOWN +
+        JSPECIFY_DEFAULT_NULLABLE +
+        JSPECIFY_DEFAULT_NOT_NULL +
+        JSPECIFY_DEFAULT_NULLNESS_UNKNOWN
 
 val READ_ONLY_ANNOTATIONS = listOf(
     JvmAnnotationNames.JETBRAINS_READONLY_ANNOTATION,

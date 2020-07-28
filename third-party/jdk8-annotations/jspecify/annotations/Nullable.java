@@ -1,4 +1,4 @@
-package codeanalysis.annotations;
+package jspecify.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

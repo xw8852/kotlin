@@ -43,21 +43,21 @@ public class ForeignJava8AnnotationsNoAnnotationInClasspathTestGenerated extends
         runTest("compiler/testData/foreignAnnotationsJava8/tests/typeUseOnObject.kt");
     }
 
-    @TestMetadata("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis")
+    @TestMetadata("compiler/testData/foreignAnnotationsJava8/tests/jspecify")
     @TestDataPath("$PROJECT_ROOT")
     @RunWith(JUnit3RunnerWithInners.class)
-    public static class Codeanalysis extends AbstractForeignJava8AnnotationsNoAnnotationInClasspathTest {
+    public static class Jspecify extends AbstractForeignJava8AnnotationsNoAnnotationInClasspathTest {
         private void runTest(String testDataFilePath) throws Exception {
-            KotlinTestUtils.runTest(this::doTest, TargetBackend.ANY, testDataFilePath);
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
         }
 
-        public void testAllFilesPresentInCodeanalysis() throws Exception {
-            KotlinTestUtils.assertAllTestsPresentByMetadata(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis"), Pattern.compile("^(.+)\\.kt$"), TargetBackend.ANY, true);
+        public void testAllFilesPresentInJspecify() throws Exception {
+            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/jspecify"), Pattern.compile("^(.+)\\.kt$"), null, true);
         }
 
         @TestMetadata("simple.kt")
         public void testSimple() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/simple.kt");
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/simple.kt");
         }
     }
 
