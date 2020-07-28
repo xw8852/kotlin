@@ -59,7 +59,8 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
         val typeIfChanged: KotlinType? get() = type.takeIf { wereChanges }
     }
 
-    private class SimpleResult(override val type: SimpleType, subtreeSize: Int, wereChanges: Boolean) : Result(type, subtreeSize, wereChanges)
+    private class SimpleResult(override val type: SimpleType, subtreeSize: Int, wereChanges: Boolean) :
+        Result(type, subtreeSize, wereChanges)
 
     // The index in the lambda is the position of the type component:
     // Example: for `A<B, C<D, E>>`, indices go as follows: `0 - A<...>, 1 - B, 2 - C<D, E>, 3 - D, 4 - E`,
@@ -72,7 +73,7 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
         return when (this) {
             is FlexibleType -> {
                 val isRawType = this is RawType
-            val lowerResult = lowerBound.enhanceInflexible(qualifiers, index, TypeComponentPosition.FLEXIBLE_LOWER, isRawType)
+                val lowerResult = lowerBound.enhanceInflexible(qualifiers, index, TypeComponentPosition.FLEXIBLE_LOWER, isRawType)
                 val upperResult = upperBound.enhanceInflexible(qualifiers, index, TypeComponentPosition.FLEXIBLE_UPPER, isRawType)
                 assert(lowerResult.subtreeSize == upperResult.subtreeSize) {
                     "Different tree sizes of bounds: " +
@@ -102,7 +103,8 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
         qualifiers: (Int) -> JavaTypeQualifiers,
         index: Int,
         position: TypeComponentPosition,
-    isBoundOfRawType: Boolean = false): SimpleResult {
+        isBoundOfRawType: Boolean = false
+    ): SimpleResult {
         val shouldEnhance = position.shouldEnhance()
         if (!shouldEnhance && arguments.isEmpty()) return SimpleResult(this, 1, false)
 
@@ -114,24 +116,25 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
 
         val typeConstructor = enhancedClassifier.typeConstructor
 
-    var globalArgIndex = index + 1
-    var wereChanges = enhancedMutabilityAnnotations != null
-    val enhancedArguments = arguments.mapIndexed { localArgIndex, arg ->
-        if (arg.isStarProjection) {
-            val qualifiersForStarProjection = qualifiers(globalArgIndex)
-            globalArgIndex++
+        var globalArgIndex = index + 1
+        var wereChanges = enhancedMutabilityAnnotations != null
+        val enhancedArguments = arguments.mapIndexed { localArgIndex, arg ->
+            if (arg.isStarProjection) {
+                val qualifiersForStarProjection = qualifiers(globalArgIndex)
+                globalArgIndex++
 
-            if (qualifiersForStarProjection.nullability == NOT_NULL && !isBoundOfRawType) {
-                val enhanced = arg.type.unwrap().makeNotNullable()
-                createProjection(enhanced, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
+                if (qualifiersForStarProjection.nullability == NOT_NULL && !isBoundOfRawType) {
+                    val enhanced = arg.type.unwrap().makeNotNullable()
+                    createProjection(enhanced, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
+                } else {
+                    TypeUtils.makeStarProjection(enhancedClassifier.typeConstructor.parameters[localArgIndex])
+                }
             } else {
-                TypeUtils.makeStarProjection(enhancedClassifier.typeConstructor.parameters[localArgIndex])
+                val enhanced = arg.type.unwrap().enhancePossiblyFlexible(qualifiers, globalArgIndex)
+                wereChanges = wereChanges || enhanced.wereChanges
+                globalArgIndex += enhanced.subtreeSize
+                createProjection(enhanced.type, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
             }
-        } else {
-            val enhanced = arg.type.unwrap().enhancePossiblyFlexible(qualifiers, globalArgIndex)
-            wereChanges = wereChanges || enhanced.wereChanges
-            globalArgIndex += enhanced.subtreeSize
-            createProjection(enhanced.type, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
         }
 
         val (enhancedNullability, enhancedNullabilityAnnotations) = this.getEnhancedNullability(effectiveQualifiers, position)
