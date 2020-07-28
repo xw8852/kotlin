@@ -1,7 +1,7 @@
 // !DIAGNOSTICS: -UNUSED_VARIABLE -UNUSED_PARAMETER
 // FILE: A.java
 
-import codeanalysis.experimental.annotations.*;
+import jspecify.annotations.*;
 
 public class A<T extends @NotNull A<T>> {
     public void foo(T t) {}
@@ -11,7 +11,7 @@ public class A<T extends @NotNull A<T>> {
 public class B extends A<B> {}
 
 // FILE: C.java
-import codeanalysis.experimental.annotations.*;
+import jspecify.annotations.*;
 public class C<E extends @NotNull C<E>> extends A<E> {}
 
 // FILE: main.kt

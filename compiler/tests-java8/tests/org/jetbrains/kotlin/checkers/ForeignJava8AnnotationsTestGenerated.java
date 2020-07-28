@@ -77,7 +77,7 @@ public class ForeignJava8AnnotationsTestGenerated extends AbstractForeignJava8An
 
         @TestMetadata("selfType.kt")
         public void testSelfType() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/selfType.kt");
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/selfType.kt");
         }
 
         @TestMetadata("simple.kt")
