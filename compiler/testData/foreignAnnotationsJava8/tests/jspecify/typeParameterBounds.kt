@@ -1,7 +1,7 @@
 // !DIAGNOSTICS: -UNUSED_VARIABLE -UNUSED_PARAMETER
 // FILE: A.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 public class A<T extends @NotNull Object> {
     public void foo(T t) {}
@@ -10,7 +10,7 @@ public class A<T extends @NotNull Object> {
 
 // FILE: B.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 @DefaultNotNull
 public class B<T> {

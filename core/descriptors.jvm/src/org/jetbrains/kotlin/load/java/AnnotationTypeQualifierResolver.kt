@@ -90,7 +90,7 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager, private va
 
             // We explicitly state that while JSR-305 TYPE_USE annotations effectively should be applied to every type
             // they are not applicable for type parameter bounds because it would be a breaking change otherwise.
-            // Only defaulting annotations from codeanalysis are applicable
+            // Only defaulting annotations from jspecify are applicable
             return isApplicableConsideringMask(QualifierApplicabilityType.TYPE_USE) &&
                     elementType != QualifierApplicabilityType.TYPE_PARAMETER_BOUNDS
         }

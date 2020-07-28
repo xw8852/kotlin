@@ -188,7 +188,7 @@ private fun LazyJavaResolverContext.extractDefaultNullabilityQualifier(
     val nullabilityQualifier =
         components
             .signatureEnhancement
-            .extractNullability(typeQualifier, onlyForCodeAnalysis = false)
+            .extractNullability(typeQualifier, onlyForJspecify = false)
             ?.copy(isForWarningOnly = jsr305State.isWarning)
             ?: return null
 

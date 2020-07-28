@@ -67,9 +67,9 @@ class SignatureEnhancement(
 
     fun extractNullability(
         annotationDescriptor: AnnotationDescriptor,
-        onlyForCodeAnalysis: Boolean
+        onlyForJspecify: Boolean
     ): NullabilityQualifierWithMigrationStatus? {
-        extractNullabilityFromKnownAnnotations(annotationDescriptor, onlyForCodeAnalysis)?.let { return it }
+        extractNullabilityFromKnownAnnotations(annotationDescriptor, onlyForJspecify)?.let { return it }
 
         val typeQualifierAnnotation =
             annotationTypeQualifierResolver.resolveTypeQualifierAnnotation(annotationDescriptor)
@@ -79,19 +79,19 @@ class SignatureEnhancement(
         if (jsr305State.isIgnore) return null
 
         return extractNullabilityFromKnownAnnotations(
-            typeQualifierAnnotation, onlyForCodeAnalysis
+            typeQualifierAnnotation, onlyForJspecify
         )?.copy(isForWarningOnly = jsr305State.isWarning)
     }
 
     private fun extractNullabilityFromKnownAnnotations(
         annotationDescriptor: AnnotationDescriptor,
-        onlyForCodeAnalysis: Boolean
+        onlyForJspecify: Boolean
     ): NullabilityQualifierWithMigrationStatus? {
         val annotationFqName = annotationDescriptor.fqName ?: return null
 
         val migrationStatus =
-            codeAnalysisMigrationStatus(annotationFqName)
-                ?: (if (!onlyForCodeAnalysis) commonMigrationStatus(annotationFqName, annotationDescriptor) else null)
+            jspecifyMigrationStatus(annotationFqName)
+                ?: (if (!onlyForJspecify) commonMigrationStatus(annotationFqName, annotationDescriptor) else null)
                 ?: return null
 
         return if (!migrationStatus.isForWarningOnly
@@ -102,12 +102,12 @@ class SignatureEnhancement(
         else migrationStatus
     }
 
-    private fun codeAnalysisMigrationStatus(
+    private fun jspecifyMigrationStatus(
         annotationFqName: FqName
     ): NullabilityQualifierWithMigrationStatus? = when (annotationFqName) {
-        CODE_ANALYSIS_NOT_NULL -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NOT_NULL)
-        CODE_ANALYSIS_NULLABLE -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NULLABLE)
-        CODE_ANALYSIS_NULLNESS_UNKNOWN -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.FORCE_FLEXIBILITY)
+        JSPECIFY_NOT_NULL -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NOT_NULL)
+        JSPECIFY_NULLABLE -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.NULLABLE)
+        JSPECIFY_NULLNESS_UNKNOWN -> NullabilityQualifierWithMigrationStatus(NullabilityQualifier.FORCE_FLEXIBILITY)
         else -> null
     }
 
@@ -358,7 +358,7 @@ class SignatureEnhancement(
         }
 
         private fun Annotations.extractNullability(): NullabilityQualifierWithMigrationStatus? =
-            this.firstNotNullResult { extractNullability(it, onlyForCodeAnalysis = typeParameterBounds) }
+            this.firstNotNullResult { extractNullability(it, onlyForJspecify = typeParameterBounds) }
 
         private fun computeIndexedQualifiersForOverride(): (Int) -> JavaTypeQualifiers {
 
