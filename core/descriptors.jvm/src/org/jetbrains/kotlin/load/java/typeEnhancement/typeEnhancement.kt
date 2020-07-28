@@ -117,13 +117,8 @@ class JavaTypeEnhancement(private val javaResolverSettings: JavaResolverSettings
         var wereChanges = enhancedMutabilityAnnotations != null
         val enhancedArguments = arguments.mapIndexed { localArgIndex, arg ->
             if (arg.isStarProjection) {
-                val qualifiersForStarProjection = qualifiers(globalArgIndex)globalArgIndex++
-    if (qualifiersForStarProjection.nullability == NOT_NULL) {
-                val enhanced = arg.type.unwrap().makeNotNullable()
-                createProjection(enhanced, arg.projectionKind, typeParameterDescriptor = typeConstructor.parameters[localArgIndex])
-            } else {
+                globalArgIndex++
                 TypeUtils.makeStarProjection(enhancedClassifier.typeConstructor.parameters[localArgIndex])
-            }
             } else {
                 val enhanced = arg.type.unwrap().enhancePossiblyFlexible(qualifiers, globalArgIndex)
                 wereChanges = wereChanges || enhanced.wereChanges
