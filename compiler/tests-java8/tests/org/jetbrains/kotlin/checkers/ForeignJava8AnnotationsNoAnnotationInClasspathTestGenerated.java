@@ -72,7 +72,7 @@ public class ForeignJava8AnnotationsNoAnnotationInClasspathTestGenerated extends
 
         @TestMetadata("typeArgumentsFromParameterBounds.kt")
         public void testTypeArgumentsFromParameterBounds() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/typeArgumentsFromParameterBounds.kt");
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/typeArgumentsFromParameterBounds.kt");
         }
 
         @TestMetadata("typeParameterBounds.kt")
