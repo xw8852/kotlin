@@ -2,14 +2,14 @@
 // CODE_ANALYSIS_STATE warn
 // FILE: A.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 public class A<T extends @NotNull Object, E extends @Nullable Object, F extends @UnknownNullness Object> {
 }
 
 // FILE: B.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 public class B {
     public void superAsIs(A<? super CharSequence, ? super CharSequence, ? super CharSequence> a) {}

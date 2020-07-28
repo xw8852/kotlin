@@ -1,4 +1,4 @@
--Xcodeanalysis-annotations=warn
+-Xjspecify-annotations=warn
 $TESTDATA_DIR$/codeanalysisUsage.kt
 $TESTDATA_DIR$/codeanalysis
 $FOREIGN_ANNOTATIONS_DIR$

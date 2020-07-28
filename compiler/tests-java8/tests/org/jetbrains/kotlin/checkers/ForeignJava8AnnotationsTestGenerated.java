@@ -60,57 +60,14 @@ public class ForeignJava8AnnotationsTestGenerated extends AbstractForeignJava8An
             runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/annotatedWildcards.kt");
         }
 
-        @TestMetadata("wildcardsWithDefault.kt")
-        public void testWildcardsWithDefault() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/wildcardsWithDefault.kt");
-        }
-    }
-
-    @TestMetadata("compiler/testData/foreignAnnotationsJava8/tests/jspecify")
-    @TestDataPath("$PROJECT_ROOT")
-    @RunWith(JUnit3RunnerWithInners.class)
-    public static class Jspecify extends AbstractForeignJava8AnnotationsTest {
-        private void runTest(String testDataFilePath) throws Exception {
-            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
-        }
-
-        public void testAllFilesPresentInJspecify() throws Exception {
-            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/jspecify"), Pattern.compile("^(.+)\\.kt$"), null, true);
-        }
-
-        @TestMetadata("defaults.kt")
-        public void testDefaults() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/defaults.kt");
-        }
-
         @TestMetadata("ignoreAnnotations.kt")
         public void testIgnoreAnnotations() throws Exception {
             runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/ignoreAnnotations.kt");
         }
 
-        @TestMetadata("nonPlatformTypeParameter.kt")
-        public void testNonPlatformTypeParameter() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/nonPlatformTypeParameter.kt");
-        }
-
-        @TestMetadata("simple.kt")
-        public void testSimple() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/simple.kt");
-        }
-
-        @TestMetadata("typeArgumentsFromParameterBounds.kt")
-        public void testTypeArgumentsFromParameterBounds() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/typeArgumentsFromParameterBounds.kt");
-        }
-
-        @TestMetadata("typeParameterBounds.kt")
-        public void testTypeParameterBounds() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/typeParameterBounds.kt");
-        }
-
-        @TestMetadata("unknownNullnessTypeParameter.kt")
-        public void testUnknownNullnessTypeParameter() throws Exception {
-            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/unknownNullnessTypeParameter.kt");
+        @TestMetadata("wildcardsWithDefault.kt")
+        public void testWildcardsWithDefault() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/wildcardsWithDefault.kt");
         }
 
         @TestMetadata("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/warnings")
@@ -118,11 +75,11 @@ public class ForeignJava8AnnotationsTestGenerated extends AbstractForeignJava8An
         @RunWith(JUnit3RunnerWithInners.class)
         public static class Warnings extends AbstractForeignJava8AnnotationsTest {
             private void runTest(String testDataFilePath) throws Exception {
-                KotlinTestUtils.runTest(this::doTest, TargetBackend.ANY, testDataFilePath);
+                KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
             }
 
             public void testAllFilesPresentInWarnings() throws Exception {
-                KotlinTestUtils.assertAllTestsPresentByMetadata(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/warnings"), Pattern.compile("^(.+)\\.kt$"), TargetBackend.ANY, true);
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/warnings"), Pattern.compile("^(.+)\\.kt$"), null, true);
             }
 
             @TestMetadata("annotatedWildcards.kt")
@@ -164,6 +121,49 @@ public class ForeignJava8AnnotationsTestGenerated extends AbstractForeignJava8An
             public void testWildcardsWithDefault() throws Exception {
                 runTest("compiler/testData/foreignAnnotationsJava8/tests/codeanalysis/warnings/wildcardsWithDefault.kt");
             }
+        }
+    }
+
+    @TestMetadata("compiler/testData/foreignAnnotationsJava8/tests/jspecify")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class Jspecify extends AbstractForeignJava8AnnotationsTest {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, this, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInJspecify() throws Exception {
+            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/foreignAnnotationsJava8/tests/jspecify"), Pattern.compile("^(.+)\\.kt$"), null, true);
+        }
+
+        @TestMetadata("defaults.kt")
+        public void testDefaults() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/defaults.kt");
+        }
+
+        @TestMetadata("nonPlatformTypeParameter.kt")
+        public void testNonPlatformTypeParameter() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/nonPlatformTypeParameter.kt");
+        }
+
+        @TestMetadata("simple.kt")
+        public void testSimple() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/simple.kt");
+        }
+
+        @TestMetadata("typeArgumentsFromParameterBounds.kt")
+        public void testTypeArgumentsFromParameterBounds() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/typeArgumentsFromParameterBounds.kt");
+        }
+
+        @TestMetadata("typeParameterBounds.kt")
+        public void testTypeParameterBounds() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/typeParameterBounds.kt");
+        }
+
+        @TestMetadata("unknownNullnessTypeParameter.kt")
+        public void testUnknownNullnessTypeParameter() throws Exception {
+            runTest("compiler/testData/foreignAnnotationsJava8/tests/jspecify/unknownNullnessTypeParameter.kt");
         }
     }
 

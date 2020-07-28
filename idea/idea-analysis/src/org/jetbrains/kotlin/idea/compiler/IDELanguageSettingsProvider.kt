@@ -16,7 +16,6 @@
 
 package org.jetbrains.kotlin.idea.compiler
 
-import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ProjectFileIndex
@@ -37,7 +36,6 @@ import org.jetbrains.kotlin.config.KotlinFacetSettingsProvider
 import org.jetbrains.kotlin.config.LanguageVersionSettings
 import org.jetbrains.kotlin.idea.caches.project.*
 import org.jetbrains.kotlin.idea.core.script.scriptRelatedModuleName
-import org.jetbrains.kotlin.idea.project.TargetPlatformDetector
 import org.jetbrains.kotlin.idea.project.getLanguageVersionSettings
 import org.jetbrains.kotlin.idea.project.languageVersionSettings
 import org.jetbrains.kotlin.idea.project.platform
@@ -45,7 +43,6 @@ import org.jetbrains.kotlin.platform.TargetPlatform
 import org.jetbrains.kotlin.platform.TargetPlatformVersion
 import org.jetbrains.kotlin.platform.jvm.JdkPlatform
 import org.jetbrains.kotlin.platform.subplatformsOfType
-import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 
@@ -87,7 +84,7 @@ object IDELanguageSettingsProvider : LanguageSettingsProvider {
             result = JavaTypeEnhancementStateParser(MessageCollector.NONE).parse(
                 compilerArguments.jsr305,
                 compilerArguments.supportCompatqualCheckerFrameworkAnnotations,
-                compilerArguments.codeanalysisAnnotations
+                compilerArguments.jspecifyAnnotations
             )
 
         }

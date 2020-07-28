@@ -144,7 +144,7 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager, private va
 
     private fun resolveDefaultAnnotationState(annotationDescriptor: AnnotationDescriptor): ReportLevel {
         if (annotationDescriptor.fqName in CODE_ANALYSIS_DEFAULT_ANNOTATIONS) {
-            return javaTypeEnhancementState.codeAnalysisReportLevel
+            return javaTypeEnhancementState.jspecifyReportLevel
         }
 
         return resolveJsr305AnnotationState(annotationDescriptor)

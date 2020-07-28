@@ -18,10 +18,8 @@ package org.jetbrains.kotlin.checkers
 
 import org.jetbrains.kotlin.codegen.forTestCompile.ForTestCompileRuntime
 import org.jetbrains.kotlin.config.*
-import org.jetbrains.kotlin.test.ConfigurationKind
 import org.jetbrains.kotlin.test.InTextDirectivesUtils
 import org.jetbrains.kotlin.test.MockLibraryUtil
-import org.jetbrains.kotlin.test.TestJdkKind
 import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 import org.jetbrains.kotlin.utils.ReportLevel
 import java.io.File
@@ -86,7 +84,7 @@ abstract class AbstractForeignAnnotationsTest : AbstractDiagnosticsTest() {
                 globalState,
                 migrationState,
                 userAnnotationsState,
-                codeAnalysisReportLevel = codeAnalysisReportLevel
+                jspecifyReportLevel = codeAnalysisReportLevel
             )
         )
     }

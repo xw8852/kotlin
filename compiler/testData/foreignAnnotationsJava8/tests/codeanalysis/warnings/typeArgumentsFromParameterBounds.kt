@@ -2,14 +2,14 @@
 // CODE_ANALYSIS_STATE warn
 // FILE: A.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 public class A<T extends @NotNull Object, E extends @Nullable Object, F extends @UnknownNullness Object> {
 }
 
 // FILE: B.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 @DefaultNullable
 public class B {
@@ -18,7 +18,7 @@ public class B {
 
 // FILE: C.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 @DefaultNotNull
 public class C {
@@ -27,7 +27,7 @@ public class C {
 
 // FILE: D.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 @DefaultUnknownNullness
 public class D {

@@ -2,7 +2,7 @@
 // CODE_ANALYSIS_STATE ignore
 // FILE: A.java
 
-import codeanalysis.annotations.*;
+import jspecify.annotations.*;
 
 public class A {
     @Nullable public String field = null;

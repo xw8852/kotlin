@@ -49,7 +49,7 @@ class JavaTypeEnhancementStateParser(private val collector: MessageCollector) {
             enableCompatqualCheckerFrameworkAnnotations =
             enableCompatqualCheckerFrameworkAnnotations
                 ?: JavaTypeEnhancementState.COMPATQUAL_CHECKER_FRAMEWORK_ANNOTATIONS_SUPPORT_DEFAULT_VALUE,
-            codeAnalysisReportLevel = codeAnalysisReportLevel
+            jspecifyReportLevel = codeAnalysisReportLevel
         )
         return if (state == JavaTypeEnhancementState.DISABLED_JSR_305) JavaTypeEnhancementState.DISABLED_JSR_305 else state
     }

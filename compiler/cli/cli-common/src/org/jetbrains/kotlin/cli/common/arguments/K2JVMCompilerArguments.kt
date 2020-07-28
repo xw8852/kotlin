@@ -263,12 +263,12 @@ class K2JVMCompilerArguments : CommonCompilerArguments() {
     var supportCompatqualCheckerFrameworkAnnotations: String? by NullableStringFreezableVar(null)
 
     @Argument(
-        value = "-Xcodeanalysis-annotations",
+        value = "-Xjspecify-annotations",
         valueDescription = "ignore|strict|warn",
-        description = "Specify behavior for Codeanalysis annotations.\n" +
+        description = "Specify behavior for jspecify annotations.\n" +
                 "Default value is 'warn'"
     )
-    var codeanalysisAnnotations: String? by FreezableVar(null)
+    var jspecifyAnnotations: String? by FreezableVar(null)
 
     @Argument(
         value = "-Xno-exception-on-explicit-equals-for-boxed-null",
@@ -389,7 +389,7 @@ class K2JVMCompilerArguments : CommonCompilerArguments() {
         result[JvmAnalysisFlags.javaTypeEnhancementState] = JavaTypeEnhancementStateParser(collector).parse(
             jsr305,
             supportCompatqualCheckerFrameworkAnnotations,
-            codeanalysisAnnotations
+            jspecifyAnnotations
         )
         result[AnalysisFlags.ignoreDataFlowInAssert] = JVMAssertionsMode.fromString(assertionsMode) != JVMAssertionsMode.LEGACY
         JvmDefaultMode.fromStringOrNull(jvmDefault)?.let {
