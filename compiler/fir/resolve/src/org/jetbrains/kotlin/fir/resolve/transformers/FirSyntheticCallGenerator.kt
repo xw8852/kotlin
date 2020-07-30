@@ -152,6 +152,7 @@ class FirSyntheticCallGenerator(
     ): FirNamedReferenceWithCandidate? {
         val callInfo = generateCallInfo(name, argumentList, callKind)
         val candidate = generateCandidate(callInfo, function)
+        function.symbol.phasedFir
         val applicability = resolutionStageRunner.processCandidate(candidate)
         if (applicability <= CandidateApplicability.INAPPLICABLE) {
             return null
