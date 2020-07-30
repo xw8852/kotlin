@@ -814,7 +814,7 @@ tasks {
             ":compiler:test",
             ":js:js.tests:test"
         )
-        if (Ide.IJ193.orHigher())
+        if (Ide.IJ201.orHigher())
             dependsOn(":kotlin-gradle-plugin-integration-tests:test")
         if (Ide.AS40.orHigher())
             dependsOn(":kotlin-ultimate:ide:android-studio-native:test")

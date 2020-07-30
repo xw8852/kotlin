@@ -1,18 +1,38 @@
 com.jetbrains.mpp.versions*, include
+com.jetbrains.kmm.wizard*, include
+
 *GradleMultiplatformHighlightingTest*, include
 *MultiplatformKaptProjectImportingTest*, include
 *MultiplatformProjectImportingTest*, include
+*HierarchicalMultiplatformProjectImportingTest*, include
+*ImportAndCheckHighlighting*, include
+
+*QuickFixMultiModuleTestGenerated*, include
+
 *DiagnosticsTestGenerated*, include
 *DiagnosticsTestWithStdLibGenerated*, include
-*HierarchicalMultiplatformProjectImportingTest*, include
 *MultiplatformAnalysisTest*, include
 *MultiPlatformIntegrationTestGenerated*, include
 *LightAnalysisModeTestGenerated$Multiplatform*, include
+*BlackBoxCodegenTestGenerated$Multiplatform*, include
+*IrBlackBoxCodegenTestGenerated$Multiplatform*, include
+*FirBlackBoxCodegenTestGenerated$Multiplatform*, include
+
+*JsCodegenBoxTestGenerated$Multiplatform*, include
 *IrJsCodegenBoxTestGenerated$Multiplatform*, include
 *IrJsCodegenBoxES6TestGenerated$Multiplatform*, include
-*QuickFixMultiModuleTestGenerated*, include
-*HierarchicalExpectActualTestGenerated*, include
+
 *HierarchicalMppIT*, include
 *MultiplatformGradleIT*, include
-*KotlinProjectIT*, include
-*NewMultiplatformIT*, include
+*KotlinAndroidExtensionIT*, include
+
+org.jetbrains.kotlin.gradle.model.KotlinProjectIT.testMultiplatformProject*, include
+org.jetbrains.kotlin.gradle.model.KotlinProjectIT.testAndroidProject*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testLibWithTestsKotlinDsl*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testDefaultSourceSetsDsl*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testResolveMppProjectDependencyToMetadata*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testCinterop*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testMultipleTargetsSamePlatform*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testIgnoreDisabledNativeTargets*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testConsumeMppLibraryFromNonKotlinProject*, include
+org.jetbrains.kotlin.gradle.NewMultiplatformIT.testLanguageSettingsApplied*, include
