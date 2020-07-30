@@ -81,7 +81,7 @@ dependencies {
     }
 
     testCompileOnly("com.eclipsesource.j2v8:j2v8_linux_x86_64:4.8.0")
-    testRuntimeOnly("com.eclipsesource.j2v8:j2v8_linux_x86_64:4.8.0")
+    testRuntimeOnly(j2v8idString)
 
     testRuntime(kotlinStdlib())
     testJsRuntime(kotlinStdlib("js"))
@@ -222,17 +222,20 @@ val generateTests by generator("org.jetbrains.kotlin.generators.tests.GenerateJs
 val nodeDir = buildDir.resolve("node")
 extensions.getByType(NodeExtension::class.java).nodeModulesDir = nodeDir
 
-val packageJson by tasks.registering(Copy::class) {
-    from(rootDir.resolve("js/js.translator/testData/package.json"))
+val prepareMochaTestData by tasks.registering(Copy::class) {
+    from(rootDir.resolve("js/js.translator/testData")) {
+        include("**/*")
+    }
     into(nodeDir)
 }
 
 val npmInstall by tasks.getting(NpmTask::class) {
-    dependsOn(packageJson)
+    dependsOn(prepareMochaTestData)
     setWorkingDir(nodeDir)
 }
 
 val runMocha by task<NpmTask> {
+    dependsOn(":dist")
     setWorkingDir(nodeDir)
 
     val target = if (project.hasProperty("teamcity")) "runOnTeamcity" else "test"
@@ -244,6 +247,15 @@ val runMocha by task<NpmTask> {
 
     val check by tasks
     check.dependsOn(this)
+
+    doFirst {
+        setEnvironment(
+            mapOf(
+                "KOTLIN_JS_LOCATION" to rootDir.resolve("dist/js/kotlin.js"),
+                "KOTLIN_JS_TEST_LOCATION" to rootDir.resolve("dist/js/kotlin-test.js")
+            )
+        )
+    }
 }
 
 enum class OsName { WINDOWS, MAC, LINUX, UNKNOWN }
