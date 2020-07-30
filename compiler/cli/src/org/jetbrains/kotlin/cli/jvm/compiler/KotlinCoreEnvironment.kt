@@ -77,10 +77,7 @@ import org.jetbrains.kotlin.cli.jvm.modules.CoreJrtFileSystem
 import org.jetbrains.kotlin.codegen.extensions.ClassBuilderInterceptorExtension
 import org.jetbrains.kotlin.codegen.extensions.ExpressionCodegenExtension
 import org.jetbrains.kotlin.compiler.plugin.ComponentRegistrar
-import org.jetbrains.kotlin.config.APPEND_JAVA_SOURCE_ROOTS_HANDLER_KEY
-import org.jetbrains.kotlin.config.CompilerConfiguration
-import org.jetbrains.kotlin.config.JVMConfigurationKeys
-import org.jetbrains.kotlin.config.languageVersionSettings
+import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.extensions.*
 import org.jetbrains.kotlin.extensions.internal.CandidateInterceptor
 import org.jetbrains.kotlin.extensions.internal.TypeResolutionInterceptor
@@ -108,12 +105,14 @@ import java.util.zip.ZipFile
 
 class KotlinCoreEnvironment private constructor(
     val projectEnvironment: JavaCoreProjectEnvironment,
-    initialConfiguration: CompilerConfiguration,
+    private val initialConfiguration: CompilerConfiguration,
     configFiles: EnvironmentConfigFiles
 ) {
 
     class ProjectEnvironment(
-        disposable: Disposable, applicationEnvironment: KotlinCoreApplicationEnvironment
+        disposable: Disposable,
+        applicationEnvironment: KotlinCoreApplicationEnvironment,
+        private val languageVersionSettings: LanguageVersionSettings
     ) :
         KotlinCoreProjectEnvironment(disposable, applicationEnvironment) {
 
@@ -138,7 +137,7 @@ class KotlinCoreEnvironment private constructor(
                     ServiceManager.getService(this, JavaFileManager::class.java) as CoreJavaFileManager
                 )
 
-                registerKotlinLightClassSupport(project)
+                registerKotlinLightClassSupport(project, ::languageVersionSettings)
 
                 registerService(ExternalAnnotationsManager::class.java, MockExternalAnnotationsManager())
                 registerService(InferredAnnotationsManager::class.java, MockInferredAnnotationsManager())
@@ -417,7 +416,7 @@ class KotlinCoreEnvironment private constructor(
         ): KotlinCoreEnvironment {
             setupIdeaStandaloneExecution()
             val appEnv = getOrCreateApplicationEnvironmentForProduction(parentDisposable, configuration)
-            val projectEnv = ProjectEnvironment(parentDisposable, appEnv)
+            val projectEnv = ProjectEnvironment(parentDisposable, appEnv, configuration.languageVersionSettings)
             val environment = KotlinCoreEnvironment(projectEnv, configuration, configFiles)
 
             synchronized(APPLICATION_LOCK) {
@@ -449,7 +448,7 @@ class KotlinCoreEnvironment private constructor(
             val configuration = initialConfiguration.copy()
             // Tests are supposed to create a single project and dispose it right after use
             val appEnv = createApplicationEnvironment(parentDisposable, configuration, unitTestMode = true)
-            val projectEnv = ProjectEnvironment(parentDisposable, appEnv)
+            val projectEnv = ProjectEnvironment(parentDisposable, appEnv, configuration.languageVersionSettings)
             return KotlinCoreEnvironment(projectEnv, configuration, extensionConfigs)
         }
 
@@ -631,10 +630,10 @@ class KotlinCoreEnvironment private constructor(
 
         // made public for Android Lint
         @JvmStatic
-        fun registerKotlinLightClassSupport(project: MockProject) {
+        fun registerKotlinLightClassSupport(project: MockProject, languageVersionSettings: () -> LanguageVersionSettings?) {
             with(project) {
                 val traceHolder = CliTraceHolder()
-                val cliLightClassGenerationSupport = CliLightClassGenerationSupport(traceHolder)
+                val cliLightClassGenerationSupport = CliLightClassGenerationSupport(traceHolder, languageVersionSettings, project)
                 val kotlinAsJavaSupport = CliKotlinAsJavaSupport(this, traceHolder)
                 registerService(LightClassGenerationSupport::class.java, cliLightClassGenerationSupport)
                 registerService(CliLightClassGenerationSupport::class.java, cliLightClassGenerationSupport)
