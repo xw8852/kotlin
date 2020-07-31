@@ -61,7 +61,7 @@ class JavaTypeEnhancementState(
         const val COMPATQUAL_CHECKER_FRAMEWORK_ANNOTATIONS_SUPPORT_DEFAULT_VALUE = true
 
         @JvmField
-        val DEFAULT_REPORT_LEVEL_FOR_CODE_ANALYSIS = ReportLevel.WARN
+        val DEFAULT_REPORT_LEVEL_FOR_CODE_ANALYSIS = ReportLevel.STRICT
 
         @JvmField
         val DEFAULT: JavaTypeEnhancementState = JavaTypeEnhancementState(ReportLevel.WARN, null, emptyMap())

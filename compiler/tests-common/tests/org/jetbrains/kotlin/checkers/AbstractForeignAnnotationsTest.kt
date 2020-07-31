@@ -24,14 +24,16 @@ import org.jetbrains.kotlin.utils.JavaTypeEnhancementState
 import org.jetbrains.kotlin.utils.ReportLevel
 import java.io.File
 
-val FOREIGN_ANNOTATIONS_SOURCES_PATH = "third-party/annotations"
-val TEST_ANNOTATIONS_SOURCE_PATH = "compiler/testData/foreignAnnotations/testAnnotations"
+const val FOREIGN_ANNOTATIONS_SOURCES_PATH = "third-party/annotations"
+const val TEST_ANNOTATIONS_SOURCE_PATH = "compiler/testData/foreignAnnotations/testAnnotations"
 
 abstract class AbstractForeignAnnotationsTest : AbstractDiagnosticsTest() {
-    private val JSR305_GLOBAL_DIRECTIVE = "JSR305_GLOBAL_REPORT"
-    private val JSR305_MIGRATION_DIRECTIVE = "JSR305_MIGRATION_REPORT"
-    private val JSR305_SPECIAL_DIRECTIVE = "JSR305_SPECIAL_REPORT"
-    private val CODE_ANALYSIS_STATE_SPECIAL_DIRECTIVE = "CODE_ANALYSIS_STATE"
+    companion object {
+        private const val JSR305_GLOBAL_DIRECTIVE = "JSR305_GLOBAL_REPORT"
+        private const val JSR305_MIGRATION_DIRECTIVE = "JSR305_MIGRATION_REPORT"
+        private const val JSR305_SPECIAL_DIRECTIVE = "JSR305_SPECIAL_REPORT"
+        private const val CODE_ANALYSIS_STATE_SPECIAL_DIRECTIVE = "CODE_ANALYSIS_STATE"
+    }
 
     override fun getExtraClasspath(): List<File> {
         val foreignAnnotations = createJarWithForeignAnnotations()
@@ -51,7 +53,7 @@ abstract class AbstractForeignAnnotationsTest : AbstractDiagnosticsTest() {
         ForTestCompileRuntime.jvmAnnotationsForTests()
     )
 
-    open protected val annotationsPath: String
+    protected open val annotationsPath: String
         get() = FOREIGN_ANNOTATIONS_SOURCES_PATH
 
     override fun loadLanguageVersionSettings(module: List<TestFile>): LanguageVersionSettings {
@@ -65,11 +67,11 @@ abstract class AbstractForeignAnnotationsTest : AbstractDiagnosticsTest() {
     }
 
     private fun loadAnalysisFlags(module: List<TestFile>): Map<AnalysisFlag<*>, Any?> {
-        val globalState = module.getDirectiveValue(JSR305_GLOBAL_DIRECTIVE) ?: ReportLevel.STRICT
-        val migrationState = module.getDirectiveValue(JSR305_MIGRATION_DIRECTIVE)
+        val globalState = module.getDirectiveValue(Companion.JSR305_GLOBAL_DIRECTIVE) ?: ReportLevel.STRICT
+        val migrationState = module.getDirectiveValue(Companion.JSR305_MIGRATION_DIRECTIVE)
 
         val userAnnotationsState = module.flatMap {
-            InTextDirectivesUtils.findListWithPrefixes(it.expectedText, JSR305_SPECIAL_DIRECTIVE)
+            InTextDirectivesUtils.findListWithPrefixes(it.expectedText, Companion.JSR305_SPECIAL_DIRECTIVE)
         }.mapNotNull {
             val (name, stateDescription) = it.split(":").takeIf { it.size == 2 } ?: return@mapNotNull null
             val state = ReportLevel.findByDescription(stateDescription) ?: return@mapNotNull null
@@ -77,7 +79,7 @@ abstract class AbstractForeignAnnotationsTest : AbstractDiagnosticsTest() {
             name to state
         }.toMap()
 
-        val codeAnalysisReportLevel = module.getDirectiveValue(CODE_ANALYSIS_STATE_SPECIAL_DIRECTIVE) ?: ReportLevel.STRICT
+        val codeAnalysisReportLevel = module.getDirectiveValue(Companion.CODE_ANALYSIS_STATE_SPECIAL_DIRECTIVE) ?: ReportLevel.STRICT
 
         return mapOf(
             JvmAnalysisFlags.javaTypeEnhancementState to JavaTypeEnhancementState(

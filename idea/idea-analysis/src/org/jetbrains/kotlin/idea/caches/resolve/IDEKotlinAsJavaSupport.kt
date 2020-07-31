@@ -194,7 +194,7 @@ class IDEKotlinAsJavaSupport(private val project: Project) : KotlinAsJavaSupport
         return platformMutabilityWrapper(fqName) {
             JavaPsiFacade.getInstance(
                 project
-            ).findClass(it, scope)
+            ) .findClass(it, scope)
         }
     }
 
