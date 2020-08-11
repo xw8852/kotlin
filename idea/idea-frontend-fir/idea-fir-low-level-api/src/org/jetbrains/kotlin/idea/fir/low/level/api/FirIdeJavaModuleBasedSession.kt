@@ -81,7 +81,7 @@ internal class FirIdeJavaModuleBasedSession private constructor(
                     FirCompositeSymbolProvider(
                         @OptIn(ExperimentalStdlibApi::class)
                         buildList {
-                            add(provider)
+                            add(provider.symbolProvider)
                             add(JavaSymbolProvider(this@apply, sessionProvider.project, searchScope))
                             add(FirIdeModuleLibraryDependenciesSession.create(moduleInfo, sessionProvider, project).firSymbolProvider)
                         }
