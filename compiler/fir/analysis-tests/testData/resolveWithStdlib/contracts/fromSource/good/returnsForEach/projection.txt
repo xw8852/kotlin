@@ -1,0 +1,128 @@
+FILE: projection.kt
+    public final infix fun <E, R> R|(E) -> R|.returnsForEachOf(collection: R|kotlin/collections/Collection<E>|): R|kotlin/Unit|
+    public final inline fun <E, R> R|kotlin/collections/Collection<E>|.forEach(block: R|(E) -> R|): R|kotlin/Unit|
+        [R|Contract description]
+         <
+            block returnsForEachOf this
+        >
+     {
+        [StubStatement]
+        lval <iterator>: R|kotlin/collections/Iterator<E>| = this@R|/forEach|.R|FakeOverride<kotlin/collections/Collection.iterator: R|kotlin/collections/Iterator<E>|>|()
+        while(R|<local>/<iterator>|.R|kotlin/collections/Iterator.hasNext|()) {
+            lval element: R|E| = R|<local>/<iterator>|.R|FakeOverride<kotlin/collections/Iterator.next: R|E|>|()
+            R|<local>/block|.R|FakeOverride<kotlin/Function1.invoke: R|R|>|(R|<local>/element|)
+        }
+
+    }
+    public abstract interface MutableNumberList<T : R|kotlin/Number|> : R|kotlin/collections/MutableList<T>| {
+    }
+    public abstract interface NumberList<out T : R|kotlin/Number|> : R|kotlin/collections/List<T>| {
+    }
+    public final fun <E> addTo(list: R|kotlin/collections/MutableList<E>|, element: R|E|): R|kotlin/Unit| {
+    }
+    public final fun <E> getFrom(list: R|kotlin/collections/MutableList<E>|): R|E| {
+        ^getFrom R|<local>/list|.R|FakeOverride<kotlin/collections/MutableList.get: R|E|>|(Int(0))
+    }
+    public final fun <E> getFrom(list: R|kotlin/collections/List<E>|): R|E| {
+        ^getFrom R|<local>/list|.R|FakeOverride<kotlin/collections/List.get: R|E|>|(Int(0))
+    }
+    public final fun testInv(list: R|kotlin/collections/MutableList<kotlin/Number>|): R|kotlin/Unit| {
+        R|/addTo|<R|kotlin/Number|>(R|<local>/list|, Int(1))
+        R|/getFrom|<R|kotlin/Number|>(R|<local>/list|).R|kotlin/Number.toByte|()
+        local final fun correct(): R|kotlin/Unit| {
+            (R|<local>/list| as R|kotlin/collections/MutableList<kotlin/Int>|)
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.dec|()
+            R|/addTo|<R|kotlin/Int|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+        local final fun test(): R|kotlin/Unit| {
+            R|<local>/list|.R|/forEach|<R|kotlin/Number|, R|kotlin/Int|>(<L> = forEach@fun <anonymous>(it: R|kotlin/Number|): R|kotlin/Int| <kind=UNKNOWN>  {
+                ^ (R|<local>/it| as R|kotlin/Int|)
+            }
+            )
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.dec|()
+            R|/addTo|<R|kotlin/Int|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+    }
+    public final fun testCov(list: R|kotlin/collections/MutableList<out kotlin/Number>|): R|kotlin/Unit| {
+        <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(out kotlin/Number)|>(R|<local>/list|, Int(1))
+        R|/getFrom|<R|CapturedType(out kotlin/Number)|>(R|<local>/list|).R|kotlin/Number.toByte|()
+        local final fun correct(): R|kotlin/Unit| {
+            (R|<local>/list| as R|kotlin/collections/MutableList<out kotlin/Int>|)
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.dec|()
+            <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(out kotlin/Int)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+        local final fun test(): R|kotlin/Unit| {
+            R|<local>/list|.R|/forEach|<R|kotlin/Number|, R|kotlin/Int|>(<L> = forEach@fun <anonymous>(it: R|kotlin/Number|): R|kotlin/Int| <kind=UNKNOWN>  {
+                ^ (R|<local>/it| as R|kotlin/Int|)
+            }
+            )
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.dec|()
+            <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(out kotlin/Int)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+    }
+    public final fun testContr(list: R|kotlin/collections/MutableList<in kotlin/Number>|): R|kotlin/Unit| {
+        R|/addTo|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|, Int(1))
+        R|/getFrom|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|).<Unresolved name: toByte>#()
+        local final fun correct(): R|kotlin/Unit| {
+            (R|<local>/list| as R|kotlin/collections/MutableList<in kotlin/Int>|)
+            R|/addTo|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|).<Unresolved name: toByte>#()
+        }
+
+        local final fun test(): R|kotlin/Unit| {
+            R|<local>/list|.R|/forEach|<R|kotlin/Any?|, R|kotlin/Int|>(<L> = forEach@fun <anonymous>(it: R|kotlin/Any?|): R|kotlin/Int| <kind=UNKNOWN>  {
+                ^ (R|<local>/it| as R|kotlin/Int|)
+            }
+            )
+            R|/addTo|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(in kotlin/Number)|>(R|<local>/list|).<Unresolved name: toByte>#()
+        }
+
+    }
+    public final fun testStarInv(list: R|MutableNumberList<*>|): R|kotlin/Unit| {
+        <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(*)|>(R|<local>/list|, Int(1))
+        R|/getFrom|<R|CapturedType(*)|>(R|<local>/list|).R|kotlin/Number.toByte|()
+        local final fun correct(): R|kotlin/Unit| {
+            (R|<local>/list| as R|MutableNumberList<out kotlin/Int>|)
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.dec|()
+            <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(out kotlin/Int)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+        local final fun test(): R|kotlin/Unit| {
+            R|<local>/list|.R|/forEach|<R|kotlin/Number|, R|kotlin/Int|>(<L> = forEach@fun <anonymous>(it: R|kotlin/Number|): R|kotlin/Int| <kind=UNKNOWN>  {
+                ^ (R|<local>/it| as R|kotlin/Int|)
+            }
+            )
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.dec|()
+            <Inapplicable(INAPPLICABLE): /addTo>#<R|CapturedType(out kotlin/Int)|>(R|<local>/list|, Int(1))
+            R|/getFrom|<R|CapturedType(out kotlin/Int)|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+    }
+    public final fun testStarOut(list: R|NumberList<*>|): R|kotlin/Unit| {
+        R|/getFrom|<R|kotlin/Number|>(R|<local>/list|).R|kotlin/Number.toByte|()
+        local final fun correct(): R|kotlin/Unit| {
+            (R|<local>/list| as R|NumberList<out kotlin/Int>|)
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.dec|()
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+        local final fun test(): R|kotlin/Unit| {
+            R|<local>/list|.R|/forEach|<R|kotlin/Number|, R|kotlin/Int|>(<L> = forEach@fun <anonymous>(it: R|kotlin/Number|): R|kotlin/Int| <kind=UNKNOWN>  {
+                ^ (R|<local>/it| as R|kotlin/Int|)
+            }
+            )
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.dec|()
+            R|/getFrom|<R|kotlin/Int|>(R|<local>/list|).R|kotlin/Int.toByte|()
+        }
+
+    }
