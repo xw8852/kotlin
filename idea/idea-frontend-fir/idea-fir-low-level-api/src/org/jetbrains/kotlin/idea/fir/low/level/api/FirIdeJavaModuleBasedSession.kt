@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.idea.fir.low.level.api
 
 import com.intellij.openapi.module.impl.scopes.ModuleWithDependentsScope
 import com.intellij.openapi.project.Project
-import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.analyzer.ModuleInfo
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.analysis.registerCheckersComponent
@@ -79,6 +78,7 @@ internal class FirIdeJavaModuleBasedSession private constructor(
                 register(
                     FirSymbolProvider::class,
                     FirCompositeSymbolProvider(
+                        this,
                         @OptIn(ExperimentalStdlibApi::class)
                         buildList {
                             add(provider.symbolProvider)
