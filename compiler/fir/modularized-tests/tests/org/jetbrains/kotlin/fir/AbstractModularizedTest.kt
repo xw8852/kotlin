@@ -134,6 +134,7 @@ abstract class AbstractModularizedTest : KtUsefulTestCase() {
 
     protected abstract fun beforePass()
     protected abstract fun afterPass(pass: Int)
+    protected open fun afterModule(moduleData: ModuleData) {}
     protected open fun afterAllPasses() {}
     protected abstract fun processModule(moduleData: ModuleData): ProcessorAction
 
@@ -154,8 +155,10 @@ abstract class AbstractModularizedTest : KtUsefulTestCase() {
 
         for (module in modules.progress(step = 0.0) { "Analyzing ${it.qualifiedName}" }) {
             if (processModule(module).stop()) {
+                afterModule(module)
                 break
             }
+            afterModule(module)
         }
 
         afterPass(pass)
