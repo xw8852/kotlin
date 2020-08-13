@@ -8,22 +8,26 @@ package org.jetbrains.kotlin.fir.resolve.dfa
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.PrivateForInline
 import org.jetbrains.kotlin.fir.contracts.FirResolvedContractDescription
-import org.jetbrains.kotlin.fir.contracts.description.ConeBooleanConstantReference
-import org.jetbrains.kotlin.fir.contracts.description.ConeConditionalEffectDeclaration
-import org.jetbrains.kotlin.fir.contracts.description.ConeConstantReference
-import org.jetbrains.kotlin.fir.contracts.description.ConeReturnsEffectDeclaration
+import org.jetbrains.kotlin.fir.contracts.description.*
+import org.jetbrains.kotlin.fir.contracts.effects
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
+import org.jetbrains.kotlin.fir.expressions.impl.FirNoReceiverExpression
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.resolve.PersistentImplicitReceiverStack
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
+import org.jetbrains.kotlin.fir.resolve.calls.candidate
 import org.jetbrains.kotlin.fir.resolve.dfa.cfg.*
+import org.jetbrains.kotlin.fir.resolve.dfa.contracts.ConeBooleanExpressionToFirVisitor
 import org.jetbrains.kotlin.fir.resolve.dfa.contracts.buildContractFir
 import org.jetbrains.kotlin.fir.resolve.dfa.contracts.createArgumentsMapping
+import org.jetbrains.kotlin.fir.resolve.dfa.contracts.unwrap
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.FirAbstractBodyResolveTransformer
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.resultType
 import org.jetbrains.kotlin.fir.symbols.AbstractFirBasedSymbol
 import org.jetbrains.kotlin.fir.symbols.CallableId
+import org.jetbrains.kotlin.fir.symbols.impl.FirAnonymousFunctionSymbol
+import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.visitors.transformSingle
 import org.jetbrains.kotlin.name.FqName
@@ -35,20 +39,23 @@ class DataFlowAnalyzerContext<FLOW : Flow>(
     val graphBuilder: ControlFlowGraphBuilder,
     val variableStorage: VariableStorage,
     val flowOnNodes: MutableMap<CFGNode<*>, FLOW>,
-    val variablesForWhenConditions: MutableMap<WhenBranchConditionExitNode, DataFlowVariable>
+    val variablesForWhenConditions: MutableMap<WhenBranchConditionExitNode, DataFlowVariable>,
+    val lambdaFunctionCalls: MutableMap<FirAnonymousFunctionSymbol, FirFunctionCall>
 ) {
+
     fun reset() {
         graphBuilder.reset()
         variableStorage.reset()
         flowOnNodes.clear()
         variablesForWhenConditions.clear()
+        lambdaFunctionCalls.clear()
     }
 
     companion object {
         fun <FLOW : Flow> empty(session: FirSession) =
             DataFlowAnalyzerContext<FLOW>(
                 ControlFlowGraphBuilder(), VariableStorage(session),
-                mutableMapOf(), mutableMapOf()
+                mutableMapOf(), mutableMapOf(), mutableMapOf()
             )
     }
 }
@@ -148,6 +155,13 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
         }
     }
 
+    fun enterFunctionCallWithCandidate(functionCall: FirFunctionCall) {
+        for (argument in functionCall.arguments) {
+            val anonymousFunction = argument.unwrap() as? FirAnonymousFunction ?: continue
+            if (anonymousFunction.isLambda) context.lambdaFunctionCalls[anonymousFunction.symbol] = functionCall
+        }
+    }
+
     // ----------------------------------- Named function -----------------------------------
 
     fun enterFunction(function: FirFunction<*>) {
@@ -185,6 +199,11 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
         // TODO: questionable
         postponedLambdaEnterNode?.mergeIncomingFlow()
         functionEnterNode.mergeIncomingFlow()
+
+        if (anonymousFunction.isLambda) {
+            val functionCall = context.lambdaFunctionCalls.remove(anonymousFunction.symbol) ?: return
+            processTrueInContract(anonymousFunction, functionCall, functionEnterNode)
+        }
     }
 
     private fun exitAnonymousFunction(anonymousFunction: FirAnonymousFunction): ControlFlowGraph {
@@ -200,6 +219,44 @@ abstract class FirDataFlowAnalyzer<FLOW : Flow>(
         enterNode.mergeIncomingFlow()
         exitNode.mergeIncomingFlow()
         enterNode.flow = enterNode.flow.fork()
+    }
+
+    private fun processTrueInContract(anonymousFunction: FirAnonymousFunction, functionCall: FirFunctionCall, node: FunctionEnterNode) {
+        if (anonymousFunction.invocationKind == null) return
+        val candidate = functionCall.candidate() ?: return
+        val function = (candidate.symbol as? FirCallableSymbol<*>)?.fir as? FirSimpleFunction ?: return
+        val expressionToParameter = candidate.argumentMapping ?: return
+        val effects = function.contractDescription.effects ?: return
+        if (effects.none { it is ConeTrueInEffectDeclaration }) return
+
+        val valueParameter = expressionToParameter.entries.find { it.key.unwrap() == anonymousFunction }?.value ?: return
+        val valueParameterIndex = function.valueParameters.indexOf(valueParameter)
+
+        val indexToExpression = mutableMapOf<Int, FirExpression>()
+        val parameterToExpression = expressionToParameter.map { it.value to it.key.unwrap() }.toMap()
+        for ((index, parameter) in function.valueParameters.withIndex()) {
+            val expression = parameterToExpression[parameter] ?: parameter.defaultValue
+            if (expression != null) indexToExpression[index] = expression
+        }
+        candidate.extensionReceiverExpression().takeIf { it != FirNoReceiverExpression }?.let { indexToExpression[-1] = it }
+            ?: candidate.dispatchReceiverExpression().takeIf { it != FirNoReceiverExpression }?.let { indexToExpression[-1] = it }
+
+        val lastFlow = node.flow
+
+        for (effect in effects) {
+            if (effect is ConeTrueInEffectDeclaration && effect.target.parameterIndex == valueParameterIndex) {
+                val condition = effect.condition.accept(ConeBooleanExpressionToFirVisitor, indexToExpression) ?: continue
+                condition.transformSingle(components.transformer, ResolutionMode.ContextDependent)
+                val conditionVariable = variableStorage.getOrCreateVariable(lastFlow, condition)
+
+                node.flow = logicSystem.approveStatementsInsideFlow(
+                    node.flow,
+                    conditionVariable eq true,
+                    shouldForkFlow = false,
+                    shouldRemoveSynthetics = true
+                )
+            }
+        }
     }
 
     // ----------------------------------- Classes -----------------------------------
