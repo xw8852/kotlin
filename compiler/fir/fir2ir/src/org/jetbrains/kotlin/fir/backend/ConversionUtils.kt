@@ -9,14 +9,11 @@ import com.intellij.psi.PsiCompiledElement
 import org.jetbrains.kotlin.KtNodeTypes
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
-import org.jetbrains.kotlin.fir.FirElement
-import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.synthetic.FirSyntheticProperty
 import org.jetbrains.kotlin.fir.expressions.FirConstExpression
 import org.jetbrains.kotlin.fir.expressions.FirConstKind
-import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.references.FirReference
 import org.jetbrains.kotlin.fir.references.FirResolvedNamedReference
 import org.jetbrains.kotlin.fir.references.FirThisReference
@@ -39,7 +36,6 @@ import org.jetbrains.kotlin.ir.expressions.IrConstKind
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.*
-import org.jetbrains.kotlin.ir.expressions.impl.IrConstImpl
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrClassPublicSymbolImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrClassSymbolImpl
@@ -55,6 +51,8 @@ import org.jetbrains.kotlin.types.AbstractTypeChecker
 import org.jetbrains.kotlin.types.AbstractTypeCheckerContext
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.util.OperatorNameConventions
+import org.jetbrains.kotlin.descriptors.Visibilities as OldVisibilities
+import org.jetbrains.kotlin.descriptors.Visibility as OldVisibility
 
 internal fun <T : IrElement> FirElement.convertWithOffsets(
     f: (startOffset: Int, endOffset: Int) -> T
@@ -347,7 +345,7 @@ private fun IrClass.findMatchingOverriddenSymbolsFromThisAndSupertypes(
         when {
             declaration is IrSimpleFunction && target is IrSimpleFunction ->
                 if (declaration.modality != Modality.FINAL &&
-                    !Visibilities.isPrivate(declaration.visibility) &&
+                    !OldVisibilities.isPrivate(declaration.visibility) &&
                     isOverriding(irBuiltIns, target, declaration)
                 ) {
                     result.add(declaration.symbol)
@@ -356,7 +354,7 @@ private fun IrClass.findMatchingOverriddenSymbolsFromThisAndSupertypes(
                 val backingField = declaration.backingField
                 if (target is IrField && backingField != null) {
                     if (!backingField.isFinal && !backingField.isStatic &&
-                        !Visibilities.isPrivate(backingField.visibility) &&
+                        !OldVisibilities.isPrivate(backingField.visibility) &&
                         isOverriding(irBuiltIns, target, backingField)
                     ) {
                         result.add(backingField.symbol)
@@ -366,7 +364,7 @@ private fun IrClass.findMatchingOverriddenSymbolsFromThisAndSupertypes(
                     val getter = declaration.getter
                     if (getter != null) {
                         if (getter.modality != Modality.FINAL &&
-                            !Visibilities.isPrivate(getter.visibility) &&
+                            !OldVisibilities.isPrivate(getter.visibility) &&
                             isOverriding(irBuiltIns, target, getter)
                         ) {
                             result.add(getter.symbol)
@@ -375,7 +373,7 @@ private fun IrClass.findMatchingOverriddenSymbolsFromThisAndSupertypes(
                     val setter = declaration.setter
                     if (setter != null) {
                         if (setter.modality != Modality.FINAL &&
-                            !Visibilities.isPrivate(setter.visibility) &&
+                            !OldVisibilities.isPrivate(setter.visibility) &&
                             isOverriding(irBuiltIns, target, setter)
                         ) {
                             result.add(setter.symbol)
@@ -552,4 +550,16 @@ fun Fir2IrComponents.createTemporaryVariableForSafeCallConstruction(
     val variableSymbol = receiverVariable.symbol
 
     return Pair(receiverVariable, variableSymbol)
+}
+
+fun Visibility.toOldVisibility(): OldVisibility = when (this.normalize()) {
+    Visibilities.PRIVATE -> OldVisibilities.PRIVATE
+    Visibilities.PRIVATE_TO_THIS -> OldVisibilities.PRIVATE_TO_THIS
+    Visibilities.PROTECTED -> OldVisibilities.PROTECTED
+    Visibilities.INTERNAL -> OldVisibilities.INTERNAL
+    Visibilities.PUBLIC -> OldVisibilities.PUBLIC
+    Visibilities.LOCAL -> OldVisibilities.LOCAL
+    Visibilities.INVISIBLE_FAKE -> OldVisibilities.INVISIBLE_FAKE
+    Visibilities.UNKNOWN -> OldVisibilities.UNKNOWN
+    else -> error("Unknown visiblity: $this")
 }

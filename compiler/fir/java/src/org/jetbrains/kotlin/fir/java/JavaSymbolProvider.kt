@@ -11,8 +11,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Modality
-import org.jetbrains.kotlin.descriptors.Visibilities
-import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.fir.*
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.*
@@ -154,7 +152,7 @@ class JavaSymbolProvider(
                     session = this@JavaSymbolProvider.session
                     symbol = firSymbol
                     name = javaClass.name
-                    visibility = javaClass.visibility
+                    visibility = javaClass.visibility.toFirVisibility()
                     modality = javaClass.modality
                     classKind = javaClass.classKind
                     this.isTopLevel = outerClassId == null
@@ -171,7 +169,7 @@ class JavaSymbolProvider(
                         }
                     }
                     status = FirResolvedDeclarationStatusImpl(
-                        javaClass.visibility,
+                        javaClass.visibility.toFirVisibility(),
                         javaClass.modality
                     ).apply {
                         this.isInner = !isTopLevel && !this@buildJavaClass.isStatic
@@ -194,7 +192,7 @@ class JavaSymbolProvider(
                                 symbol = FirVariableSymbol(fieldId)
                                 name = fieldName
                                 status = FirResolvedDeclarationStatusImpl(
-                                    javaField.visibility,
+                                    javaField.visibility.toFirVisibility(),
                                     javaField.modality
                                 ).apply {
                                     isStatic = javaField.isStatic
@@ -213,7 +211,7 @@ class JavaSymbolProvider(
                                 symbol = FirFieldSymbol(fieldId)
                                 name = fieldName
                                 status = FirResolvedDeclarationStatusImpl(
-                                    javaField.visibility,
+                                    javaField.visibility.toFirVisibility(),
                                     javaField.modality
                                 ).apply {
                                     isStatic = javaField.isStatic
@@ -221,7 +219,7 @@ class JavaSymbolProvider(
                                     isActual = false
                                     isOverride = false
                                 }
-                                visibility = javaField.visibility
+                                visibility = javaField.visibility.toFirVisibility()
                                 modality = javaField.modality
                                 returnTypeRef = returnType.toFirJavaTypeRef(this@JavaSymbolProvider.session, javaTypeParameterStack)
                                 isVar = !javaField.isFinal
@@ -245,7 +243,7 @@ class JavaSymbolProvider(
                             source = (javaMethod as? JavaElementImpl<*>)?.psi?.toFirPsiSourceElement()
                             symbol = methodSymbol
                             name = methodName
-                            visibility = javaMethod.visibility
+                            visibility = javaMethod.visibility.toFirVisibility()
                             modality = javaMethod.modality
                             returnTypeRef = returnType.toFirJavaTypeRef(this@JavaSymbolProvider.session, javaTypeParameterStack)
                             isStatic = javaMethod.isStatic
@@ -257,7 +255,7 @@ class JavaSymbolProvider(
                                 )
                             }
                             status = FirResolvedDeclarationStatusImpl(
-                                javaMethod.visibility,
+                                javaMethod.visibility.toFirVisibility(),
                                 javaMethod.modality
                             ).apply {
                                 isStatic = javaMethod.isStatic
@@ -339,7 +337,7 @@ class JavaSymbolProvider(
                     }
                     for (javaConstructor in javaClassDeclaredConstructors) {
                         declarations += prepareJavaConstructor(
-                            visibility = javaConstructor.visibility,
+                            visibility = javaConstructor.visibility.toFirVisibility(),
                             psi = (javaConstructor as? JavaElementImpl<*>)?.psi,
                         ).apply {
                             this.typeParameters += javaConstructor.typeParameters.convertTypeParameters(javaTypeParameterStack)
