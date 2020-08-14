@@ -137,7 +137,7 @@ class FirClassSubstitutionScope(
             is FirConstructorSymbol -> return original
             else -> throw AssertionError("Should not be here")
         }
-        if (skipPrivateMembers && member.visibility == Visibilities.PRIVATE) return original
+        if (skipPrivateMembers && member.visibility == Visibilities.Private) return original
 
         val (newTypeParameters, newReceiverType, newReturnType, newSubstitutor) = createSubstitutedData(member)
         val newParameterTypes = member.valueParameters.map {
@@ -188,7 +188,7 @@ class FirClassSubstitutionScope(
     private fun createFakeOverrideProperty(original: FirPropertySymbol): FirPropertySymbol {
         if (substitutor == ConeSubstitutor.Empty) return original
         val member = original.fir
-        if (skipPrivateMembers && member.visibility == Visibilities.PRIVATE) return original
+        if (skipPrivateMembers && member.visibility == Visibilities.Private) return original
 
         val (newTypeParameters, newReceiverType, newReturnType) = createSubstitutedData(member)
         if (newReceiverType == null &&
@@ -285,7 +285,7 @@ class FirClassSubstitutionScope(
     private fun createFakeOverrideField(original: FirFieldSymbol): FirFieldSymbol {
         if (substitutor == ConeSubstitutor.Empty) return original
         val member = original.fir
-        if (skipPrivateMembers && member.visibility == Visibilities.PRIVATE) return original
+        if (skipPrivateMembers && member.visibility == Visibilities.Private) return original
 
         val returnType = typeCalculator.tryCalculateReturnType(member).type
         val newReturnType = returnType.substitute() ?: return original
@@ -296,7 +296,7 @@ class FirClassSubstitutionScope(
     private fun createFakeOverrideAccessor(original: FirAccessorSymbol): FirAccessorSymbol {
         if (substitutor == ConeSubstitutor.Empty) return original
         val member = original.fir as FirSyntheticProperty
-        if (skipPrivateMembers && member.visibility == Visibilities.PRIVATE) return original
+        if (skipPrivateMembers && member.visibility == Visibilities.Private) return original
 
         val returnType = typeCalculator.tryCalculateReturnType(member).type
         val newReturnType = returnType.substitute()

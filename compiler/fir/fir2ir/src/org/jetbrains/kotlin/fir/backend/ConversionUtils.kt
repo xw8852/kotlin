@@ -301,7 +301,7 @@ internal fun FirSimpleFunction.generateOverriddenFunctionSymbols(
     scope.processFunctionsByName(name) {}
     val overriddenSet = mutableSetOf<IrSimpleFunctionSymbol>()
     scope.processDirectlyOverriddenFunctions(symbol) {
-        if ((it.fir as FirSimpleFunction).visibility == Visibilities.PRIVATE) {
+        if ((it.fir as FirSimpleFunction).visibility == Visibilities.Private) {
             return@processDirectlyOverriddenFunctions ProcessorAction.NEXT
         }
         val overridden = declarationStorage.getIrFunctionSymbol(it)
@@ -553,13 +553,13 @@ fun Fir2IrComponents.createTemporaryVariableForSafeCallConstruction(
 }
 
 fun Visibility.toOldVisibility(): OldVisibility = when (this.normalize()) {
-    Visibilities.PRIVATE -> OldVisibilities.PRIVATE
-    Visibilities.PRIVATE_TO_THIS -> OldVisibilities.PRIVATE_TO_THIS
-    Visibilities.PROTECTED -> OldVisibilities.PROTECTED
-    Visibilities.INTERNAL -> OldVisibilities.INTERNAL
-    Visibilities.PUBLIC -> OldVisibilities.PUBLIC
-    Visibilities.LOCAL -> OldVisibilities.LOCAL
-    Visibilities.INVISIBLE_FAKE -> OldVisibilities.INVISIBLE_FAKE
-    Visibilities.UNKNOWN -> OldVisibilities.UNKNOWN
+    Visibilities.Private -> OldVisibilities.PRIVATE
+    Visibilities.PrivateToThis -> OldVisibilities.PRIVATE_TO_THIS
+    Visibilities.Protected -> OldVisibilities.PROTECTED
+    Visibilities.Internal -> OldVisibilities.INTERNAL
+    Visibilities.Public -> OldVisibilities.PUBLIC
+    Visibilities.Local -> OldVisibilities.LOCAL
+    Visibilities.InvisibleFake -> OldVisibilities.INVISIBLE_FAKE
+    Visibilities.Unknown -> OldVisibilities.UNKNOWN
     else -> error("Unknown visiblity: $this")
 }

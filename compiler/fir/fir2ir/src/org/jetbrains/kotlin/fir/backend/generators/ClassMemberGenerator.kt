@@ -91,7 +91,7 @@ internal class ClassMemberGenerator(
                     }
                     declaration is FirConstructor && declaration.isPrimary -> {
                     }
-                    declaration is FirRegularClass && declaration.visibility == Visibilities.LOCAL -> {
+                    declaration is FirRegularClass && declaration.visibility == Visibilities.Local -> {
                         val irNestedClass = classifierStorage.getCachedIrClass(declaration)!!
                         irNestedClass.parent = irClass
                         conversionScope.withParent(irNestedClass) {
@@ -266,7 +266,7 @@ internal class ClassMemberGenerator(
                 scope.processPropertiesByName(property.name) {}
                 val overriddenSet = mutableSetOf<IrSimpleFunctionSymbol>()
                 scope.processDirectlyOverriddenProperties(property.symbol) {
-                    if (it.fir.visibility == Visibilities.PRIVATE) {
+                    if (it.fir.visibility == Visibilities.Private) {
                         return@processDirectlyOverriddenProperties ProcessorAction.NEXT
                     }
                     val overridden = declarationStorage.getIrPropertyOrFieldSymbol(it)
