@@ -49,6 +49,7 @@ dependencies {
     embedded(project(":core:metadata"))
     embedded(project(":core:metadata.jvm"))
     embedded(project(":core:descriptors"))
+    embedded(project(":core:descriptors.common"))
     embedded(project(":core:descriptors.jvm"))
     embedded(project(":core:deserialization"))
     embedded(project(":core:descriptors.runtime"))
