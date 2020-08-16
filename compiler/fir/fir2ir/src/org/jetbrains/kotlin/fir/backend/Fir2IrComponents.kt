@@ -25,4 +25,5 @@ interface Fir2IrComponents {
     val signatureComposer: Fir2IrSignatureComposer
     val callGenerator: CallAndReferenceGenerator
     val fakeOverrideGenerator: FakeOverrideGenerator
+    val visibilityConverter: Fir2IrVisibilityConverter
 }

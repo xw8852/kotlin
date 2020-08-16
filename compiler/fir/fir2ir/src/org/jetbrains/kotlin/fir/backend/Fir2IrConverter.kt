@@ -203,6 +203,7 @@ class Fir2IrConverter(
             generatorExtensions: GeneratorExtensions,
             mangler: FirMangler,
             irFactory: IrFactory,
+            visibilityConverter: Fir2IrVisibilityConverter
         ): Fir2IrResult {
             val moduleDescriptor = FirModuleDescriptor(session)
             val symbolTable = SymbolTable(signaturer, irFactory)
@@ -226,6 +227,7 @@ class Fir2IrConverter(
             components.declarationStorage = declarationStorage
             components.classifierStorage = classifierStorage
             components.typeConverter = typeConverter
+            components.visibilityConverter = visibilityConverter
             val irFiles = mutableListOf<IrFile>()
 
             val converter = Fir2IrConverter(moduleDescriptor, sourceManager, components)

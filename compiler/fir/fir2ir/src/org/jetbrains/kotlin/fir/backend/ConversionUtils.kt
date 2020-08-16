@@ -551,15 +551,3 @@ fun Fir2IrComponents.createTemporaryVariableForSafeCallConstruction(
 
     return Pair(receiverVariable, variableSymbol)
 }
-
-fun Visibility.toOldVisibility(): OldVisibility = when (this.normalize()) {
-    Visibilities.Private -> OldVisibilities.PRIVATE
-    Visibilities.PrivateToThis -> OldVisibilities.PRIVATE_TO_THIS
-    Visibilities.Protected -> OldVisibilities.PROTECTED
-    Visibilities.Internal -> OldVisibilities.INTERNAL
-    Visibilities.Public -> OldVisibilities.PUBLIC
-    Visibilities.Local -> OldVisibilities.LOCAL
-    Visibilities.InvisibleFake -> OldVisibilities.INVISIBLE_FAKE
-    Visibilities.Unknown -> OldVisibilities.UNKNOWN
-    else -> error("Unknown visiblity: $this")
-}
