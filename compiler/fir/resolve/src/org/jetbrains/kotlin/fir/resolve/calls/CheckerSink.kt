@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.fir.resolve.calls
 
 import org.jetbrains.kotlin.fir.PrivateForInline
 import org.jetbrains.kotlin.fir.resolve.inference.InferenceComponents
+import org.jetbrains.kotlin.resolve.calls.tower.CandidateApplicability
 import kotlin.coroutines.Continuation
 
 abstract class CheckerSink {
@@ -41,7 +42,7 @@ class CheckerSinkImpl(
         private set
 
     override fun reportApplicability(new: CandidateApplicability) {
-        if (new < current) current = new
+        if (new > current) current = new
     }
 
     @PrivateForInline

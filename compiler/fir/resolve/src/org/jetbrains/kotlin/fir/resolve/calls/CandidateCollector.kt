@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.fir.resolve.calls
 
 import org.jetbrains.kotlin.fir.resolve.BodyResolveComponents
 import org.jetbrains.kotlin.fir.resolve.calls.tower.TowerGroup
+import org.jetbrains.kotlin.resolve.calls.tower.CandidateApplicability
 
 open class CandidateCollector(
     val components: BodyResolveComponents,
@@ -30,7 +31,7 @@ open class CandidateCollector(
     open fun consumeCandidate(group: TowerGroup, candidate: Candidate): CandidateApplicability {
         val applicability = resolutionStageRunner.processCandidate(candidate)
 
-        if (applicability > currentApplicability || (applicability == currentApplicability && group < bestGroup)) {
+        if (applicability < currentApplicability || (applicability == currentApplicability && group < bestGroup)) {
             candidates.clear()
             currentApplicability = applicability
             bestGroup = group
@@ -49,7 +50,7 @@ open class CandidateCollector(
         isSuccess() && bestGroup < group
 
     fun isSuccess(): Boolean {
-        return currentApplicability >= CandidateApplicability.SYNTHETIC_RESOLVED
+        return currentApplicability <= CandidateApplicability.SYNTHETIC_RESOLVED
     }
 }
 

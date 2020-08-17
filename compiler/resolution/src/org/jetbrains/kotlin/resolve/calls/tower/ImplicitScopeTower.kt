@@ -21,7 +21,7 @@ import org.jetbrains.kotlin.incremental.components.LookupLocation
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.model.DiagnosticReporter
 import org.jetbrains.kotlin.resolve.calls.model.KotlinCallDiagnostic
-import org.jetbrains.kotlin.resolve.calls.tower.ResolutionCandidateApplicability.*
+import org.jetbrains.kotlin.resolve.calls.tower.CandidateApplicability.*
 import org.jetbrains.kotlin.resolve.scopes.*
 import org.jetbrains.kotlin.resolve.scopes.receivers.ReceiverValueWithSmartCastInfo
 import org.jetbrains.kotlin.resolve.scopes.utils.parentsWithSelf
@@ -89,7 +89,7 @@ fun getResultApplicability(diagnostics: Collection<KotlinCallDiagnostic>) =
     diagnostics.maxBy { it.candidateApplicability }?.candidateApplicability
             ?: RESOLVED
 
-enum class ResolutionCandidateApplicability {
+enum class CandidateApplicability {
     RESOLVED, // call success or has uncompleted inference or in other words possible successful candidate
     RESOLVED_WITH_ERROR, // call has error, but it is still successful from resolution perspective
     RESOLVED_NEED_PRESERVE_COMPATIBILITY, // call resolved successfully, but using new features that changes resolve
@@ -102,10 +102,16 @@ enum class ResolutionCandidateApplicability {
     INAPPLICABLE_ARGUMENTS_MAPPING_ERROR, // arguments not mapped to parameters (i.e. different size of arguments and parameters)
     INAPPLICABLE_WRONG_RECEIVER, // receiver not matched
     HIDDEN, // removed from resolve
-    RESOLVED_TO_SAM_WITH_VARARG, // migration warning up to 1.5 (when resolve to function with SAM conversion and array without spread as vararg)
+    RESOLVED_TO_SAM_WITH_VARARG; // migration warning up to 1.5 (when resolve to function with SAM conversion and array without spread as vararg)
+
+    companion object {
+        val SYNTHETIC_RESOLVED: CandidateApplicability = RESOLVED_LOW_PRIORITY
+        val PARAMETER_MAPPING_ERROR: CandidateApplicability = INAPPLICABLE_ARGUMENTS_MAPPING_ERROR
+        val WRONG_RECEIVER: CandidateApplicability = INAPPLICABLE_WRONG_RECEIVER
+    }
 }
 
-abstract class ResolutionDiagnostic(candidateApplicability: ResolutionCandidateApplicability) :
+abstract class ResolutionDiagnostic(candidateApplicability: CandidateApplicability) :
     KotlinCallDiagnostic(candidateApplicability) {
     override fun report(reporter: DiagnosticReporter) {
         // do nothing
