@@ -28,7 +28,7 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.usageView.UsageInfo
 import com.intellij.util.CommonProcessors
 import com.intellij.util.Processor
-import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactory
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactoryBase
 import org.jetbrains.kotlin.idea.findUsages.KotlinReferencePreservingUsageInfo
 import org.jetbrains.kotlin.idea.findUsages.KotlinReferenceUsageInfo
 import org.jetbrains.kotlin.idea.util.application.runReadAction
@@ -38,7 +38,7 @@ import java.util.*
 abstract class KotlinFindUsagesHandler<T : PsiElement>(
     psiElement: T,
     private val elementsToSearch: Collection<PsiElement>,
-    val factory: KotlinFindUsagesHandlerFactory
+    val factory: KotlinFindUsagesHandlerFactoryBase
 ) : FindUsagesHandler(psiElement) {
 
     @Suppress("UNCHECKED_CAST")
@@ -46,7 +46,7 @@ abstract class KotlinFindUsagesHandler<T : PsiElement>(
         return psiElement as T
     }
 
-    constructor(psiElement: T, factory: KotlinFindUsagesHandlerFactory) : this(psiElement, emptyList(), factory)
+    constructor(psiElement: T, factory: KotlinFindUsagesHandlerFactoryBase) : this(psiElement, emptyList(), factory)
 
     override fun getPrimaryElements(): Array<PsiElement> {
         return if (elementsToSearch.isEmpty())

@@ -36,8 +36,11 @@ import com.intellij.util.indexing.FileBasedIndex
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
+import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
+import org.jetbrains.kotlin.psi.psiUtil.hasExpectModifier
 import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
 import java.util.*
@@ -144,3 +147,8 @@ fun findScriptsWithUsages(declaration: KtNamedDeclaration): List<KtFile> {
         .filter { it.findScriptDefinition() != null }
         .toList()
 }
+
+fun KtDeclaration.isExpectDeclaration(): Boolean = if (hasExpectModifier())
+    true
+else
+    containingClassOrObject?.isExpectDeclaration() == true

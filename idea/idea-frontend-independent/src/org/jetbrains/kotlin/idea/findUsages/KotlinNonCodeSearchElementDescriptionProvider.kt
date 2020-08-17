@@ -19,11 +19,17 @@ package org.jetbrains.kotlin.idea.findUsages
 import com.intellij.psi.ElementDescriptionLocation
 import com.intellij.psi.ElementDescriptionProvider
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNamedElement
 import com.intellij.refactoring.util.NonCodeSearchDescriptionLocation
-import org.jetbrains.kotlin.asJava.namedUnwrappedElement
+import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
+import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType
 
 class KotlinNonCodeSearchElementDescriptionProvider : ElementDescriptionProvider {
+
+    val PsiElement.namedUnwrappedElement: PsiNamedElement?
+        get() = unwrapped?.getNonStrictParentOfType()
+
     override fun getElementDescription(element: PsiElement, location: ElementDescriptionLocation): String? {
         if (location !is NonCodeSearchDescriptionLocation) return null
         val declaration = element.namedUnwrappedElement as? KtNamedDeclaration ?: return null

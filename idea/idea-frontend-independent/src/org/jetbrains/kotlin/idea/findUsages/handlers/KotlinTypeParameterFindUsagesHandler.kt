@@ -21,13 +21,13 @@ import com.intellij.find.findUsages.FindUsagesOptions
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.searches.ReferencesSearch
-import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactory
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactoryBase
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinTypeParameterFindUsagesDialog
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
 
 class KotlinTypeParameterFindUsagesHandler(
     element: KtNamedDeclaration,
-    factory: KotlinFindUsagesHandlerFactory
+    factory: KotlinFindUsagesHandlerFactoryBase
 ) : KotlinFindUsagesHandler<KtNamedDeclaration>(element, factory) {
     override fun getFindUsagesDialog(
         isSingleFile: Boolean, toShowInNewTab: Boolean, mustOpenInNewTab: Boolean

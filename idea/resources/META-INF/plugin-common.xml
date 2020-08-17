@@ -205,6 +205,12 @@
     <projectService serviceInterface="org.jetbrains.kotlin.asJava.KotlinAsJavaSupport"
                     serviceImplementation="org.jetbrains.kotlin.idea.caches.resolve.IDEKotlinAsJavaSupport"/>
 
+    <projectService serviceInterface="org.jetbrains.kotlin.asJava.LightClassProvider"
+                    serviceImplementation="org.jetbrains.kotlin.idea.caches.resolve.LightClassProviderImpl"/>
+
+    <projectService serviceInterface="org.jetbrains.kotlin.idea.search.PsiBasedClassResolverFabric"
+                    serviceImplementation="org.jetbrains.kotlin.idea.search.PsiBasedClassResolverFabricImpl"/>
+
     <projectService serviceInterface="org.jetbrains.kotlin.psi.KtFileClassProvider"
                     serviceImplementation="org.jetbrains.kotlin.idea.caches.resolve.KtFileClassProviderImpl"/>
 

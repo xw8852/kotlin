@@ -13,7 +13,7 @@ import com.intellij.psi.search.*
 import com.intellij.util.Processor
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
-import org.jetbrains.kotlin.asJava.toLightClass
+import org.jetbrains.kotlin.asJava.getLightClass
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.idea.KotlinFileType
@@ -252,7 +252,7 @@ abstract class OperatorReferenceSearcher<TReferenceElement : KtElement>(
         val classDeclaration = DescriptorToSourceUtilsIde.getAnyDeclaration(project, classDescriptor)
         return when (classDeclaration) {
             is PsiClass -> classDeclaration
-            is KtClassOrObject -> classDeclaration.toLightClass()
+            is KtClassOrObject -> classDeclaration.getLightClass()
             else -> null
         }
     }

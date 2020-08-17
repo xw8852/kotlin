@@ -22,6 +22,7 @@ import com.intellij.find.findUsages.JavaFindUsagesHelper
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiMethod
 import com.intellij.psi.search.PsiElementProcessor
 import com.intellij.psi.search.PsiElementProcessorAdapter
 import com.intellij.psi.search.searches.MethodReferencesSearch
@@ -32,7 +33,7 @@ import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
 import org.jetbrains.kotlin.idea.findUsages.KotlinClassFindUsagesOptions
-import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactory
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactoryBase
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindClassUsagesDialog
 import org.jetbrains.kotlin.idea.search.declarationsSearch.HierarchySearchRequest
 import org.jetbrains.kotlin.idea.search.declarationsSearch.searchInheritors
@@ -54,7 +55,7 @@ import java.util.*
 
 class KotlinFindClassUsagesHandler(
     ktClass: KtClassOrObject,
-    factory: KotlinFindUsagesHandlerFactory
+    factory: KotlinFindUsagesHandlerFactoryBase
 ) : KotlinFindUsagesHandler<KtClassOrObject>(ktClass, factory) {
     override fun getFindUsagesDialog(
         isSingleFile: Boolean, toShowInNewTab: Boolean, mustOpenInNewTab: Boolean
@@ -97,7 +98,7 @@ class KotlinFindClassUsagesHandler(
             }
 
             if (kotlinOptions.searchConstructorUsages) {
-                classOrObject.toLightClass()?.constructors?.filterIsInstance<KtLightMethod>()?.forEach { constructor ->
+                classOrObject.toLightClass()?.constructors?.filterIsInstance<PsiMethod>()?.forEach { constructor ->
                     val scope = constructor.useScope.intersectWith(options.searchScope)
                     var query = MethodReferencesSearch.search(constructor, scope, true)
                     if (kotlinOptions.isSkipImportStatements) {

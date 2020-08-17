@@ -45,7 +45,6 @@ import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.ParameterDescriptor
 import org.jetbrains.kotlin.idea.KotlinBundle
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
-import org.jetbrains.kotlin.idea.debugger.readAction
 import org.jetbrains.kotlin.idea.findUsages.*
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindFunctionUsagesDialog
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindPropertyUsagesDialog
@@ -69,13 +68,13 @@ import javax.swing.event.HyperlinkListener
 abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected constructor(
     declaration: T,
     elementsToSearch: Collection<PsiElement>,
-    factory: KotlinFindUsagesHandlerFactory
+    factory: KotlinFindUsagesHandlerFactoryBase
 ) : KotlinFindUsagesHandler<T>(declaration, elementsToSearch, factory) {
 
     private class Function(
         declaration: KtFunction,
         elementsToSearch: Collection<PsiElement>,
-        factory: KotlinFindUsagesHandlerFactory
+        factory: KotlinFindUsagesHandlerFactoryBase
     ) : KotlinFindMemberUsagesHandler<KtFunction>(declaration, elementsToSearch, factory) {
 
         override fun getFindUsagesOptions(dataContext: DataContext?): FindUsagesOptions = factory.findFunctionOptions
@@ -114,7 +113,7 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
     private class Property(
         propertyDeclaration: KtNamedDeclaration,
         elementsToSearch: Collection<PsiElement>,
-        factory: KotlinFindUsagesHandlerFactory
+        factory: KotlinFindUsagesHandlerFactoryBase
     ) : KotlinFindMemberUsagesHandler<KtNamedDeclaration>(propertyDeclaration, elementsToSearch, factory) {
 
         override fun processElementUsages(element: PsiElement, processor: UsageInfoProcessor, options: FindUsagesOptions): Boolean {
@@ -134,7 +133,7 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
             }
         }
 
-        private val isPropertyOfDataClass = readAction {
+        private val isPropertyOfDataClass = runReadAction {
             propertyDeclaration.parent is KtParameterList &&
                     propertyDeclaration.parent.parent is KtPrimaryConstructor &&
                     propertyDeclaration.parent.parent.parent.let { it is KtClass && it.isData() }
@@ -356,7 +355,7 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
         fun getInstance(
             declaration: KtNamedDeclaration,
             elementsToSearch: Collection<PsiElement> = emptyList(),
-            factory: KotlinFindUsagesHandlerFactory
+            factory: KotlinFindUsagesHandlerFactoryBase
         ): KotlinFindMemberUsagesHandler<out KtNamedDeclaration> {
             return if (declaration is KtFunction)
                 Function(declaration, elementsToSearch, factory)

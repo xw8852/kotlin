@@ -16,6 +16,7 @@ dependencies {
 
     compileOnly(project(":compiler:psi"))
     compileOnly(project(":kotlin-reflect-api"))
+    compileOnly(project(":compiler:light-classes"))
     compileOnly(intellijCoreDep())
     compileOnly(intellijDep())
 
@@ -29,7 +30,12 @@ dependencies {
 }
 
 sourceSets {
-    "main" { projectDefault() }
+    "main" {
+        projectDefault()
+        resources.srcDirs(
+            "resources-en"
+        )
+    }
     "test" { projectDefault() }
 }
 

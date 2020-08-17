@@ -189,6 +189,22 @@ The Kotlin FIR plugin provides language support in IntelliJ IDEA and Android Stu
 
     <highlightingPassFactory implementation="org.jetbrains.kotlin.idea.highlighter.KotlinBeforeResolveHighlightingPass$Registrar"/>
 
+    <projectService serviceInterface="org.jetbrains.kotlin.asJava.LightClassProvider"
+                    serviceImplementation="org.jetbrains.kotlin.asJava.FirLightClassProviderImpl"/>
+
+    <projectService serviceInterface="org.jetbrains.kotlin.idea.search.PsiBasedClassResolverFabric"
+                    serviceImplementation="org.jetbrains.kotlin.idea.search.FirPsiBasedClassResolverFabricImpl"/>
+
+    <lang.findUsagesProvider language="kotlin" implementationClass="org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesProviderBase"/>
+    <findUsagesHandlerFactory implementation="org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactoryBase"/>
+    <elementDescriptionProvider
+        implementation="org.jetbrains.kotlin.idea.findUsages.KotlinElementDescriptionProviderBase"
+        order="first"/>
+    <elementDescriptionProvider
+        implementation="org.jetbrains.kotlin.idea.findUsages.KotlinNonCodeSearchElementDescriptionProvider"/>
+
+
+
     <fileType name="Kotlin"
               implementationClass="org.jetbrains.kotlin.idea.KotlinFileType"
               fieldName="INSTANCE"

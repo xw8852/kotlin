@@ -28,13 +28,21 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfTypeAndBranch
 import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 import org.jetbrains.kotlin.resolve.ImportPath
-import java.util.concurrent.atomic.AtomicInteger
+
+class PsiBasedClassResolverFabricImpl : PsiBasedClassResolverFabric() {
+    @TestOnly
+    override fun getInstance(targetClassFqName: String): PsiBasedClassResolver =
+        PsiBasedClassResolverImpl(targetClassFqName)
+
+    override fun getInstance(target: PsiClass): PsiBasedClassResolver =
+        PsiBasedClassResolverImpl.getInstance(target)
+}
 
 /**
  * Can quickly check whether a short name reference in a given file can resolve to the class/interface/type alias
  * with the given qualified name.
  */
-class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName: String) {
+class PsiBasedClassResolverImpl @TestOnly constructor(private val targetClassFqName: String) : PsiBasedClassResolver {
     private val targetShortName = targetClassFqName.substringAfterLast('.')
     private val targetPackage = targetClassFqName.substringBeforeLast('.', "")
 
@@ -53,24 +61,15 @@ class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName:
     private var forceAmbiguityForNonAnnotations: Boolean = false
 
     companion object {
-        @get:TestOnly
-        val attempts = AtomicInteger()
-
-        @get:TestOnly
-        val trueHits = AtomicInteger()
-
-        @get:TestOnly
-        val falseHits = AtomicInteger()
-
         private val PSI_BASED_CLASS_RESOLVER_KEY = Key<CachedValue<PsiBasedClassResolver>>("PsiBasedClassResolver")
 
         fun getInstance(target: PsiClass): PsiBasedClassResolver {
             target.getUserData(PSI_BASED_CLASS_RESOLVER_KEY)?.let { return it.value }
 
-            val cachedValue = CachedValuesManager.getManager(target.project).createCachedValue(
+            val cachedValue = CachedValuesManager.getManager(target.project).createCachedValue<PsiBasedClassResolver>(
                 {
                     CachedValueProvider.Result(
-                        PsiBasedClassResolver(target),
+                        PsiBasedClassResolverImpl(target),
                         KotlinCodeBlockModificationListener.getInstance(target.project).kotlinOutOfCodeBlockTracker
                     )
                 }, false
@@ -132,9 +131,16 @@ class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName:
     }
 
     @TestOnly
-    fun addConflict(fqName: String) {
+    override fun addConflict(fqName: String) {
         conflictingPackages.add(fqName.substringBeforeLast('.'))
     }
+
+    private val ImpreciseResolveResult.asResolveResult: PsiBasedClassResolver.ResolveResult
+        get() = when (this) {
+            MATCH -> PsiBasedClassResolver.ResolveResult.MATCH
+            UNSURE -> PsiBasedClassResolver.ResolveResult.UNSURE
+            NO_MATCH -> PsiBasedClassResolver.ResolveResult.NO_MATCH
+        }
 
     /**
      * Checks if a reference with the short name of [targetClassFqName] in the given file will resolve
@@ -143,51 +149,51 @@ class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName:
      * @return true if it will definitely resolve to that class, false if it will definitely resolve to something else,
      * null if full resolve is required to answer that question.
      */
-    fun canBeTargetReference(ref: KtSimpleNameExpression): ImpreciseResolveResult {
-        attempts.incrementAndGet()
+    override fun canBeTargetReference(ref: KtSimpleNameExpression): PsiBasedClassResolver.ResolveResult {
+        PsiBasedClassResolver.attempts.incrementAndGet()
         // The names can be different if the target was imported via an import alias
         if (ref.getReferencedName() != targetShortName) {
-            return UNSURE
+            return PsiBasedClassResolver.ResolveResult.UNSURE
         }
 
         // Names in expressions can conflict with local declarations and methods of implicit receivers,
         // so we can't find out what they refer to without a full resolve.
-        val userType = ref.getStrictParentOfType<KtUserType>() ?: return UNSURE
+        val userType = ref.getStrictParentOfType<KtUserType>() ?: return PsiBasedClassResolver.ResolveResult.UNSURE
         val parentAnnotation = userType.getParentOfTypeAndBranch<KtAnnotationEntry> { typeReference }
-        if (forceAmbiguityForNonAnnotations && parentAnnotation == null) return UNSURE
+        if (forceAmbiguityForNonAnnotations && parentAnnotation == null) return PsiBasedClassResolver.ResolveResult.UNSURE
 
         //For toplevel declarations it's fine to resolve by imports
         val declaration = parentAnnotation?.getParentOfType<KtDeclaration>(true)
-        if (forceAmbiguityForInnerAnnotations && declaration?.parent !is KtFile) return UNSURE
-        if (forceAmbiguity) return UNSURE
+        if (forceAmbiguityForInnerAnnotations && declaration?.parent !is KtFile) return PsiBasedClassResolver.ResolveResult.UNSURE
+        if (forceAmbiguity) return PsiBasedClassResolver.ResolveResult.UNSURE
 
         val qualifiedCheckResult = checkQualifiedReferenceToTarget(ref)
-        if (qualifiedCheckResult != null) return qualifiedCheckResult.returnValue
+        if (qualifiedCheckResult != null) return qualifiedCheckResult.returnValue.asResolveResult
 
         val file = ref.containingKtFile
         var result: Result = Result.NothingFound
         when (file.packageFqName.asString()) {
             targetPackage -> result = result.changeTo(Result.Found)
             in conflictingPackages -> result = result.changeTo(Result.FoundOther)
-            in packagesWithTypeAliases -> return UNSURE
+            in packagesWithTypeAliases -> return PsiBasedClassResolver.ResolveResult.UNSURE
         }
 
         for (importPath in file.getDefaultImports()) {
             result = analyzeSingleImport(result, importPath.fqName, importPath.isAllUnder, importPath.alias?.asString())
-            if (result == Result.Ambiguity) return UNSURE
+            if (result == Result.Ambiguity) return PsiBasedClassResolver.ResolveResult.UNSURE
         }
 
         for (importDirective in file.importDirectives) {
             result = analyzeSingleImport(result, importDirective.importedFqName, importDirective.isAllUnder, importDirective.aliasName)
-            if (result == Result.Ambiguity) return UNSURE
+            if (result == Result.Ambiguity) return PsiBasedClassResolver.ResolveResult.UNSURE
         }
 
         if (result.returnValue == MATCH) {
-            trueHits.incrementAndGet()
+            PsiBasedClassResolver.trueHits.incrementAndGet()
         } else if (result.returnValue == NO_MATCH) {
-            falseHits.incrementAndGet()
+            PsiBasedClassResolver.falseHits.incrementAndGet()
         }
-        return result.returnValue
+        return result.returnValue.asResolveResult
     }
 
     private fun analyzeSingleImport(result: Result, importedFqName: FqName?, isAllUnder: Boolean, aliasName: String?): Result {
