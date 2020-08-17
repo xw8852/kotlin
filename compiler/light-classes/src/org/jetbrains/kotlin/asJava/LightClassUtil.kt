@@ -25,6 +25,8 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.elements.*
 import org.jetbrains.kotlin.asJava.finder.JavaElementFinder
+import org.jetbrains.kotlin.fileClasses.JvmMultifileClassPartInfo
+import org.jetbrains.kotlin.fileClasses.fileClassInfo
 import org.jetbrains.kotlin.fileClasses.javaFileFacadeFqName
 import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.psi.*
@@ -128,10 +130,11 @@ object LightClassUtil {
         return getPsiMethodWrappers(declaration).firstOrNull()
     }
 
-    private fun getPsiMethodWrappers(declaration: KtDeclaration): Sequence<KtLightMethod> =
-        getWrappingClasses(declaration).flatMap { it.methods.asSequence() }
+    private fun getPsiMethodWrappers(declaration: KtDeclaration): Sequence<KtLightMethod> {
+        val methods = getWrappingClasses(declaration).flatMap { it.methods.asSequence() }
             .filterIsInstance<KtLightMethod>()
-            .filter { it.kotlinOrigin === declaration }
+        return methods.filter { it.kotlinOrigin === declaration }
+    }
 
     private fun getWrappingClass(declaration: KtDeclaration): PsiClass? {
         if (declaration is KtParameter) {
@@ -170,11 +173,17 @@ object LightClassUtil {
     private fun findFileFacade(ktFile: KtFile): PsiClass? {
         val fqName = ktFile.javaFileFacadeFqName
         val project = ktFile.project
-        val classesWithMatchingFqName = JavaElementFinder.getInstance(project).findClasses(fqName.asString(), GlobalSearchScope.allScope(project))
-        return classesWithMatchingFqName.singleOrNull() ?:
-               classesWithMatchingFqName.find {
-                   it.containingFile?.virtualFile == ktFile.virtualFile
-               }
+        val scope = GlobalSearchScope.allScope(project)
+        var classesWithMatchingFqName = JavaElementFinder.getInstance(project).findClasses(fqName.asString(), scope)
+        // for multifile compiled classes, we need to locate compiled .class files
+        // server.RequestProcessor__KotlinTopLevelMethodUsagesMultifile_0Kt
+        if (classesWithMatchingFqName.isEmpty() && ktFile.fileClassInfo is JvmMultifileClassPartInfo) {
+            classesWithMatchingFqName =
+                JavaElementFinder.getInstance(project).findClasses(ktFile.fileClassInfo.fileClassFqName.asString(), scope)
+        }
+        return classesWithMatchingFqName.singleOrNull() ?: classesWithMatchingFqName.find {
+            it.containingFile?.virtualFile == ktFile.virtualFile
+        }
     }
 
     private fun getWrappingClasses(declaration: KtDeclaration): Sequence<PsiClass> {
@@ -192,8 +201,9 @@ object LightClassUtil {
     }
 
     private fun extractPropertyAccessors(
-            ktDeclaration: KtDeclaration,
-            specialGetter: PsiMethod?, specialSetter: PsiMethod?): PropertyAccessorsPsiMethods {
+        ktDeclaration: KtDeclaration,
+        specialGetter: PsiMethod?, specialSetter: PsiMethod?
+    ): PropertyAccessorsPsiMethods {
 
         val (setters, getters) = getPsiMethodWrappers(ktDeclaration).partition { it.isSetter }
 
@@ -202,16 +212,17 @@ object LightClassUtil {
         val backingField = getLightClassBackingField(ktDeclaration)
         val additionalAccessors = allGetters.drop(1) + allSetters.drop(1)
         return PropertyAccessorsPsiMethods(
-                allGetters.firstOrNull(),
-                allSetters.firstOrNull(),
-                backingField,
-                additionalAccessors
+            allGetters.firstOrNull(),
+            allSetters.firstOrNull(),
+            backingField,
+            additionalAccessors
         )
     }
 
     fun buildLightTypeParameterList(
-            owner: PsiTypeParameterListOwner,
-            declaration: KtDeclaration): PsiTypeParameterList {
+        owner: PsiTypeParameterListOwner,
+        declaration: KtDeclaration
+    ): PsiTypeParameterList {
         val builder = KotlinLightTypeParameterListBuilder(owner)
         if (declaration is KtTypeParameterListOwner) {
             val parameters = declaration.typeParameters
@@ -225,10 +236,12 @@ object LightClassUtil {
         return builder
     }
 
-    class PropertyAccessorsPsiMethods(val getter: PsiMethod?,
-                                             val setter: PsiMethod?,
-                                             val backingField: PsiField?,
-                                             additionalAccessors: List<PsiMethod>) : Iterable<PsiMethod> {
+    class PropertyAccessorsPsiMethods(
+        val getter: PsiMethod?,
+        val setter: PsiMethod?,
+        val backingField: PsiField?,
+        additionalAccessors: List<PsiMethod>
+    ) : Iterable<PsiMethod> {
         private val allMethods: List<PsiMethod>
         val allDeclarations: List<PsiNamedElement>
 
