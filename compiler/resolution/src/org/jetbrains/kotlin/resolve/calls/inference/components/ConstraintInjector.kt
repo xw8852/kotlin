@@ -37,6 +37,15 @@ abstract class ConstraintInjector(
         override fun refineType(type: KotlinTypeMarker): KotlinTypeMarker {
             return type
         }
+
+        override fun simplifyLowerConstraintForNullableTypeVariable(
+            c: TypeSystemInferenceExtensionContext,
+            subTypeConstructor: TypeConstructorMarker,
+            typeVariableTypeConstructor: TypeConstructorMarker,
+            subType: KotlinTypeMarker
+        ): KotlinTypeMarker {
+            return with(c) { subType.makeDefinitelyNotNullOrNotNull() }
+        }
     }
 
     private val ALLOWED_DEPTH_DELTA_FOR_INCORPORATION = 1
@@ -140,6 +149,13 @@ abstract class ConstraintInjector(
     }
 
     protected abstract fun refineType(type: KotlinTypeMarker): KotlinTypeMarker
+
+    protected abstract fun simplifyLowerConstraintForNullableTypeVariable(
+        c: TypeSystemInferenceExtensionContext,
+        subTypeConstructor: TypeConstructorMarker,
+        typeVariableTypeConstructor: TypeConstructorMarker,
+        subType: KotlinTypeMarker
+    ): KotlinTypeMarker
 
     private fun Context.isAllowedType(type: KotlinTypeMarker) =
         type.typeDepth() <= maxTypeDepthFromInitialConstraints + ALLOWED_DEPTH_DELTA_FOR_INCORPORATION
@@ -353,6 +369,19 @@ abstract class ConstraintInjector(
             error(
                 "Type variable $variable should not be fixed!\n" +
                         renderBaseConstraint()
+            )
+        }
+
+        override fun simplifyLowerConstraintForNullableTypeVariable(
+            subTypeConstructor: TypeConstructorMarker,
+            typeVariableTypeConstructor: TypeConstructorMarker,
+            subType: KotlinTypeMarker
+        ): KotlinTypeMarker {
+            return simplifyLowerConstraintForNullableTypeVariable(
+                this,
+                subTypeConstructor,
+                typeVariableTypeConstructor,
+                subType
             )
         }
 
