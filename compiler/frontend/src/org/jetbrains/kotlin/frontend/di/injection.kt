@@ -31,6 +31,7 @@ import org.jetbrains.kotlin.platform.TargetPlatformVersion
 import org.jetbrains.kotlin.platform.isCommon
 import org.jetbrains.kotlin.resolve.*
 import org.jetbrains.kotlin.resolve.calls.components.ClassicTypeSystemContextForCS
+import org.jetbrains.kotlin.resolve.calls.inference.components.ClassicConstraintInjector
 import org.jetbrains.kotlin.resolve.calls.smartcasts.DataFlowValueFactoryImpl
 import org.jetbrains.kotlin.resolve.calls.tower.KotlinResolutionStatelessCallbacksImpl
 import org.jetbrains.kotlin.resolve.checkers.ExpectedActualDeclarationChecker
@@ -115,6 +116,7 @@ fun StorageComponentContainer.configureStandardResolveComponents() {
     useImpl<ResolveSession>()
     useImpl<LazyTopDownAnalyzer>()
     useImpl<AnnotationResolverImpl>()
+    useImpl<ClassicConstraintInjector>()
 }
 
 fun StorageComponentContainer.configureIncrementalCompilation(lookupTracker: LookupTracker, expectActualTracker: ExpectActualTracker) {
