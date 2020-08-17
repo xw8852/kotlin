@@ -11,9 +11,7 @@ import org.jetbrains.kotlin.builtins.getValueParameterTypesFromFunctionType
 import org.jetbrains.kotlin.builtins.isBuiltinFunctionalType
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.annotations.FilteredAnnotations
-import org.jetbrains.kotlin.resolve.calls.inference.ConstraintSystemBuilder
 import org.jetbrains.kotlin.resolve.calls.inference.addSubsystemFromArgument
-import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintStorage
 import org.jetbrains.kotlin.resolve.calls.inference.model.CoroutinePosition
 import org.jetbrains.kotlin.resolve.calls.inference.model.LambdaArgumentConstraintPosition
 import org.jetbrains.kotlin.resolve.calls.model.*
@@ -22,26 +20,11 @@ import org.jetbrains.kotlin.types.UnwrappedType
 import org.jetbrains.kotlin.types.model.*
 import org.jetbrains.kotlin.types.typeUtil.builtIns
 import org.jetbrains.kotlin.utils.addToStdlib.cast
+import org.jetbrains.kotlin.resolve.calls.components.PostponedArgumentsAnalyzerContext as Context
 
 class PostponedArgumentsAnalyzer(
     private val callableReferenceResolver: CallableReferenceResolver
 ) {
-    interface Context : TypeSystemInferenceExtensionContext {
-        fun buildCurrentSubstitutor(additionalBindings: Map<TypeConstructorMarker, StubTypeMarker>): TypeSubstitutorMarker
-        fun buildNotFixedVariablesToStubTypesSubstitutor(): TypeSubstitutorMarker
-        fun bindingStubsForPostponedVariables(): Map<TypeVariableMarker, StubTypeMarker>
-
-        // type can be proper if it not contains not fixed type variables
-        fun canBeProper(type: KotlinTypeMarker): Boolean
-
-        fun hasUpperOrEqualUnitConstraint(type: KotlinTypeMarker): Boolean
-
-        // mutable operations
-        fun addOtherSystem(otherSystem: ConstraintStorage)
-
-        fun getBuilder(): ConstraintSystemBuilder
-    }
-
     fun analyze(
         c: Context,
         resolutionCallbacks: KotlinResolutionCallbacks,

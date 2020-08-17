@@ -16,7 +16,7 @@
 
 package org.jetbrains.kotlin.resolve.calls.inference
 
-import org.jetbrains.kotlin.resolve.calls.components.PostponedArgumentsAnalyzer
+import org.jetbrains.kotlin.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintKind
 import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintPosition
 import org.jetbrains.kotlin.resolve.calls.inference.model.ConstraintStorage
@@ -91,7 +91,7 @@ private fun ConstraintSystemBuilder.addConstraintIfCompatible(
     }
 
 
-fun PostponedArgumentsAnalyzer.Context.addSubsystemFromArgument(argument: KotlinCallArgument?): Boolean {
+fun PostponedArgumentsAnalyzerContext.addSubsystemFromArgument(argument: KotlinCallArgument?): Boolean {
     return when (argument) {
         is SubKotlinCallArgument -> {
             addOtherSystem(argument.callResult.constraintSystem)

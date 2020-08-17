@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.resolve.calls.inference.model
 
 import org.jetbrains.kotlin.resolve.calls.components.PostponedArgumentsAnalyzer
+import org.jetbrains.kotlin.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.jetbrains.kotlin.resolve.calls.inference.*
 import org.jetbrains.kotlin.resolve.calls.inference.components.ConstraintInjector
 import org.jetbrains.kotlin.resolve.calls.inference.components.KotlinConstraintSystemCompleter
@@ -33,7 +34,7 @@ class NewConstraintSystemImpl(
     ResultTypeResolver.Context,
     KotlinConstraintSystemCompleter.Context,
     PostponedArgumentInputTypesResolver.Context,
-    PostponedArgumentsAnalyzer.Context {
+    PostponedArgumentsAnalyzerContext {
     private val storage = MutableConstraintStorage()
     private var state = State.BUILDING
     private val typeVariablesTransaction: MutableList<TypeVariableMarker> = SmartList()
@@ -335,7 +336,7 @@ class NewConstraintSystemImpl(
         }
     }
 
-    // KotlinConstraintSystemCompleter.Context, PostponedArgumentsAnalyzer.Context
+    // KotlinConstraintSystemCompleter.Context, PostponedArgumentsAnalyzerContext
     override fun canBeProper(type: KotlinTypeMarker): Boolean {
         checkState(State.BUILDING, State.COMPLETION)
         return !type.contains { storage.notFixedTypeVariables.containsKey(it.typeConstructor()) }
@@ -350,7 +351,7 @@ class NewConstraintSystemImpl(
         }
     }
 
-    // PostponedArgumentsAnalyzer.Context
+    // PostponedArgumentsAnalyzerContext
     override fun buildCurrentSubstitutor(): TypeSubstitutorMarker {
         checkState(State.BUILDING, State.COMPLETION, State.TRANSACTION)
         return buildCurrentSubstitutor(emptyMap())
@@ -383,7 +384,7 @@ class NewConstraintSystemImpl(
         return storage
     }
 
-    // PostponedArgumentsAnalyzer.Context
+    // PostponedArgumentsAnalyzerContext
     override fun hasUpperOrEqualUnitConstraint(type: KotlinTypeMarker): Boolean {
         checkState(State.BUILDING, State.COMPLETION, State.FREEZED)
         val constraints = storage.notFixedTypeVariables[type.typeConstructor()]?.constraints ?: return false
