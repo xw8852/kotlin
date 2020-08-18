@@ -22,4 +22,4 @@ fun box(): String {
 // 1 \(Y\)
 
 // JVM_IR_TEMPLATES
-// 4 \$this
+// 4 this\$0
