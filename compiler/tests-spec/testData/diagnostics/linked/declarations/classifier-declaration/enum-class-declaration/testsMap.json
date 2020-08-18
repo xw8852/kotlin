@@ -164,5 +164,35 @@
         }
       ]
     }
+  },
+  "5": {
+    "pos": {
+      "1": [
+        {
+          "specVersion": "1.4-rfc+0.3-603",
+          "casesNumber": 1,
+          "description": "enum class implicitly inherits the built-in class kotlin.Enum\u003cE\u003e",
+          "path": "compiler/tests-spec/testData/diagnostics/linked/declarations/classifier-declaration/enum-class-declaration/p-2/pos/3.1.kt",
+          "unexpectedBehaviour": false,
+          "linkType": "primary",
+          "helpers": "checkType"
+        }
+      ]
+    }
+  },
+  "7": {
+    "pos": {
+      "1": [
+        {
+          "specVersion": "1.4-rfc+0.3-603",
+          "casesNumber": 1,
+          "description": "enum class implicitly inherits the built-in class kotlin.Enum\u003cE\u003e",
+          "path": "compiler/tests-spec/testData/diagnostics/linked/declarations/classifier-declaration/enum-class-declaration/p-2/pos/3.1.kt",
+          "unexpectedBehaviour": false,
+          "linkType": "primary",
+          "helpers": "checkType"
+        }
+      ]
+    }
   }
 }
