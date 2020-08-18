@@ -1711,6 +1711,11 @@ public class Fir2IrTextTestGenerated extends AbstractFir2IrTextTest {
         public void testDeprecated() throws Exception {
             runTest("compiler/testData/ir/irText/firProblems/deprecated.kt");
         }
+
+        @TestMetadata("putIfAbsent.kt")
+        public void testPutIfAbsent() throws Exception {
+            runTest("compiler/testData/ir/irText/firProblems/putIfAbsent.kt");
+        }
     }
 
     @TestMetadata("compiler/testData/ir/irText/lambdas")

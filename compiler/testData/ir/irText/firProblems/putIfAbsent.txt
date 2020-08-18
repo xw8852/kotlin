@@ -1,0 +1,29 @@
+FILE fqName:<root> fileName:/putIfAbsent.kt
+  FUN name:set visibility:public modality:FINAL <K, V, U> ($receiver:kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>>, k1:K of <root>.set, k2:V of <root>.set, value:U of <root>.set) returnType:kotlin.Unit [operator]
+    TYPE_PARAMETER name:K index:0 variance: superTypes:[kotlin.Any?]
+    TYPE_PARAMETER name:V index:1 variance: superTypes:[kotlin.Any?]
+    TYPE_PARAMETER name:U index:2 variance: superTypes:[kotlin.Any?]
+    $receiver: VALUE_PARAMETER name:<this> type:kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>>
+    VALUE_PARAMETER name:k1 index:0 type:K of <root>.set
+    VALUE_PARAMETER name:k2 index:1 type:V of <root>.set
+    VALUE_PARAMETER name:value index:2 type:U of <root>.set
+    BLOCK_BODY
+      TYPE_OP type=kotlin.Unit origin=IMPLICIT_COERCION_TO_UNIT typeOperand=kotlin.Unit
+        CALL 'public open fun putIfAbsent (p0: K of kotlin.collections.MutableMap?, p1: V of kotlin.collections.MutableMap?): V of kotlin.collections.MutableMap? declared in kotlin.collections.MutableMap' type=kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>? origin=null
+          $this: GET_VAR '<this>: kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>> declared in <root>.set' type=kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>> origin=null
+          p0: GET_VAR 'k1: K of <root>.set declared in <root>.set' type=K of <root>.set origin=null
+          p1: CALL 'public final fun mutableMapOf <K, V> (): kotlin.collections.MutableMap<K of kotlin.collections.mutableMapOf, V of kotlin.collections.mutableMapOf> [inline] declared in kotlin.collections' type=kotlin.collections.MutableMap<V of <root>.set, U of <root>.set> origin=null
+            <K>: V of <root>.set
+            <V>: U of <root>.set
+      VAR name:map type:kotlin.collections.MutableMap<V of <root>.set, U of <root>.set> [val]
+        CALL 'public final fun getValue <K, V> (key: K of kotlin.collections.getValue): V of kotlin.collections.getValue declared in kotlin.collections' type=kotlin.collections.MutableMap<V of <root>.set, U of <root>.set> origin=null
+          <K>: K of <root>.set
+          <V>: kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>
+          $receiver: GET_VAR '<this>: kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>> declared in <root>.set' type=kotlin.collections.MutableMap<K of <root>.set, kotlin.collections.MutableMap<V of <root>.set, U of <root>.set>> origin=null
+          key: GET_VAR 'k1: K of <root>.set declared in <root>.set' type=K of <root>.set origin=null
+      CALL 'public final fun set <K, V> (key: K of kotlin.collections.set, value: V of kotlin.collections.set): kotlin.Unit [inline,operator] declared in kotlin.collections' type=kotlin.Unit origin=EQ
+        <K>: V of <root>.set
+        <V>: U of <root>.set
+        $receiver: GET_VAR 'val map: kotlin.collections.MutableMap<V of <root>.set, U of <root>.set> [val] declared in <root>.set' type=kotlin.collections.MutableMap<V of <root>.set, U of <root>.set> origin=null
+        key: GET_VAR 'k2: V of <root>.set declared in <root>.set' type=V of <root>.set origin=null
+        value: GET_VAR 'value: U of <root>.set declared in <root>.set' type=U of <root>.set origin=null
