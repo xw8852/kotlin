@@ -41,12 +41,13 @@ FILE fqName:<root> fileName:/callElement.kt
       $this: VALUE_PARAMETER name:<this> type:kotlin.Any
   CLASS INTERFACE name:KtCallElement modality:ABSTRACT visibility:public superTypes:[<root>.KtElement]
     $this: VALUE_PARAMETER INSTANCE_RECEIVER name:<this> type:<root>.KtCallElement
-    FUN FAKE_OVERRIDE name:acceptChildren visibility:public modality:ABSTRACT <> ($this:<root>.KtElement, visitor:<root>.KtVisitor<D of <root>.KtElement.acceptChildren>, data:D of <root>.KtElement.acceptChildren) returnType:kotlin.Unit [fake_override]
+    FUN FAKE_OVERRIDE name:acceptChildren visibility:public modality:ABSTRACT <D> ($this:<root>.KtElement, visitor:<root>.KtVisitor<D of <root>.KtCallElement.acceptChildren>, data:D of <root>.KtCallElement.acceptChildren) returnType:kotlin.Unit [fake_override]
       overridden:
         public abstract fun acceptChildren <D> (visitor: <root>.KtVisitor<D of <root>.KtElement.acceptChildren>, data: D of <root>.KtElement.acceptChildren): kotlin.Unit declared in <root>.KtElement
+      TYPE_PARAMETER name:D index:0 variance: superTypes:[kotlin.Any?]
       $this: VALUE_PARAMETER name:<this> type:<root>.KtElement
-      VALUE_PARAMETER name:visitor index:0 type:<root>.KtVisitor<D of <root>.KtElement.acceptChildren>
-      VALUE_PARAMETER name:data index:1 type:D of <root>.KtElement.acceptChildren
+      VALUE_PARAMETER name:visitor index:0 type:<root>.KtVisitor<D of <root>.KtCallElement.acceptChildren>
+      VALUE_PARAMETER name:data index:1 type:D of <root>.KtCallElement.acceptChildren
     FUN FAKE_OVERRIDE name:equals visibility:public modality:OPEN <> ($this:kotlin.Any, other:kotlin.Any?) returnType:kotlin.Boolean [fake_override,operator]
       overridden:
         public open fun equals (other: kotlin.Any?): kotlin.Boolean [operator] declared in kotlin.Any
@@ -62,12 +63,13 @@ FILE fqName:<root> fileName:/callElement.kt
       $this: VALUE_PARAMETER name:<this> type:kotlin.Any
   CLASS INTERFACE name:KtDeclaration modality:ABSTRACT visibility:public superTypes:[<root>.KtAnnotated]
     $this: VALUE_PARAMETER INSTANCE_RECEIVER name:<this> type:<root>.KtDeclaration
-    FUN FAKE_OVERRIDE name:acceptChildren visibility:public modality:ABSTRACT <> ($this:<root>.KtElement, visitor:<root>.KtVisitor<D of <root>.KtElement.acceptChildren>, data:D of <root>.KtElement.acceptChildren) returnType:kotlin.Unit [fake_override]
+    FUN FAKE_OVERRIDE name:acceptChildren visibility:public modality:ABSTRACT <D> ($this:<root>.KtElement, visitor:<root>.KtVisitor<D of <root>.KtDeclaration.acceptChildren>, data:D of <root>.KtDeclaration.acceptChildren) returnType:kotlin.Unit [fake_override]
       overridden:
         public abstract fun acceptChildren <D> (visitor: <root>.KtVisitor<D of <root>.KtElement.acceptChildren>, data: D of <root>.KtElement.acceptChildren): kotlin.Unit declared in <root>.KtElement
+      TYPE_PARAMETER name:D index:0 variance: superTypes:[kotlin.Any?]
       $this: VALUE_PARAMETER name:<this> type:<root>.KtElement
-      VALUE_PARAMETER name:visitor index:0 type:<root>.KtVisitor<D of <root>.KtElement.acceptChildren>
-      VALUE_PARAMETER name:data index:1 type:D of <root>.KtElement.acceptChildren
+      VALUE_PARAMETER name:visitor index:0 type:<root>.KtVisitor<D of <root>.KtDeclaration.acceptChildren>
+      VALUE_PARAMETER name:data index:1 type:D of <root>.KtDeclaration.acceptChildren
     FUN FAKE_OVERRIDE name:equals visibility:public modality:OPEN <> ($this:kotlin.Any, other:kotlin.Any?) returnType:kotlin.Boolean [fake_override,operator]
       overridden:
         public open fun equals (other: kotlin.Any?): kotlin.Boolean [operator] declared in kotlin.Any
