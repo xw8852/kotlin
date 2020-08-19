@@ -14,7 +14,6 @@ import org.jetbrains.kotlin.ir.expressions.IrConstructorCall
 import org.jetbrains.kotlin.ir.symbols.IrPropertySymbol
 import org.jetbrains.kotlin.ir.symbols.IrScriptSymbol
 import org.jetbrains.kotlin.ir.types.IrType
-import org.jetbrains.kotlin.ir.util.transform
 import org.jetbrains.kotlin.ir.util.transformInPlace
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformer
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitor
@@ -30,8 +29,6 @@ class IrScriptImpl(
     override val startOffset: Int get() = UNDEFINED_OFFSET
     override val endOffset: Int get() = UNDEFINED_OFFSET
     override var origin: IrDeclarationOrigin = SCRIPT_ORIGIN
-
-    constructor(symbol: IrScriptSymbol, name: Name) : this(UNDEFINED_OFFSET, UNDEFINED_OFFSET, symbol, name)
 
     init {
         symbol.bind(this)

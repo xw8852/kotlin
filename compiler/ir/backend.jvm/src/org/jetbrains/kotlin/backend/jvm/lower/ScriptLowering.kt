@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.IrAnonymousInitializerSymbolImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrClassSymbolImpl
+import org.jetbrains.kotlin.ir.transformStatement
 import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.impl.IrTypeAbbreviationImpl
@@ -122,7 +123,7 @@ private class ScriptToClassLowering(val context: JvmBackendContext) : FileLoweri
             irScript.statements.forEach { scriptStatement ->
                 irScriptClass.addAnonymousInitializer().also { irInitializer ->
                     irInitializer.body = context.createIrBuilder(irInitializer.symbol).irBlockBody {
-                        +scriptStatement.transform(scriptTransformer, null)
+                        +scriptStatement.transformStatement(scriptTransformer)
                     }
                 }
             }
@@ -194,7 +195,7 @@ fun <T : IrElement> T.patchDeclarationParentsToScriptClass(
             element.acceptChildrenVoid(this)
         }
 
-        override fun visitDeclaration(declaration: IrDeclaration) {
+        override fun visitDeclaration(declaration: IrDeclarationBase) {
             if (declaration.parent == script) {
                 declaration.parent = scriptClass
             }
@@ -261,7 +262,7 @@ private class ScriptToClassTransformer(
         throw IllegalArgumentException("Unsupported element type: $element")
 
     override fun visitElement(element: IrElement): IrElement = unexpectedElement(element)
-    override fun visitDeclaration(declaration: IrDeclaration): IrStatement = unexpectedElement(declaration)
+    override fun visitDeclaration(declaration: IrDeclarationBase): IrStatement = unexpectedElement(declaration)
 
     override fun visitModuleFragment(declaration: IrModuleFragment): IrModuleFragment = unexpectedElement(declaration)
     override fun visitExternalPackageFragment(declaration: IrExternalPackageFragment): IrExternalPackageFragment = unexpectedElement(declaration)
@@ -274,12 +275,12 @@ private class ScriptToClassTransformer(
         superTypes = superTypes.map {
             it.remapType()
         }
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitSimpleFunction(declaration: IrSimpleFunction): IrSimpleFunction = declaration.apply {
         transformParent()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitConstructor(declaration: IrConstructor): IrConstructor = declaration.apply {
@@ -290,30 +291,30 @@ private class ScriptToClassTransformer(
     override fun visitProperty(declaration: IrProperty): IrProperty = declaration.apply {
         transformParent()
         transformAnnotations()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitField(declaration: IrField): IrField = declaration.apply {
         transformParent()
         transformAnnotations()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitLocalDelegatedProperty(declaration: IrLocalDelegatedProperty): IrLocalDelegatedProperty = declaration.apply {
         transformParent()
         transformAnnotations()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitEnumEntry(declaration: IrEnumEntry): IrEnumEntry = declaration.apply {
         transformParent()
         transformAnnotations()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitAnonymousInitializer(declaration: IrAnonymousInitializer): IrAnonymousInitializer = declaration.apply {
         transformParent()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitVariable(declaration: IrVariable): IrVariable {
@@ -340,7 +341,7 @@ private class ScriptToClassTransformer(
         return remappedDeclaration.apply {
             transformParent()
             transformAnnotations()
-            transformChildren()
+            transformChildren(this@ScriptToClassTransformer, null)
         }
     }
 
@@ -348,7 +349,7 @@ private class ScriptToClassTransformer(
         remapSuperTypes()
         transformParent()
         transformAnnotations()
-        transformChildren()
+        transformChildren(this@ScriptToClassTransformer, null)
     }
 
     override fun visitValueParameter(expression: IrValueParameter): IrValueParameter {
@@ -376,7 +377,7 @@ private class ScriptToClassTransformer(
         return remappedExpression.apply {
             transformParent()
             transformAnnotations()
-            transformChildren()
+            transformChildren(this@ScriptToClassTransformer, null)
         }
     }
 
@@ -398,7 +399,7 @@ private class ScriptToClassTransformer(
         return remappedExpression.apply {
             transformParent()
             transformAnnotations()
-            transformChildren()
+            transformChildren(this@ScriptToClassTransformer, null)
         }
     }
 
@@ -412,13 +413,13 @@ private class ScriptToClassTransformer(
             } else {
                 IrVarargImpl(expression.startOffset, expression.endOffset, type, elementType, elements).copyAttributes(expression)
             }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
-    override fun visitSpreadElement(spread: IrSpreadElement): IrSpreadElement = spread.apply {
-        transformChildren()
+    override fun visitSpreadElement(spread: IrSpreadElement): IrSpreadElement = spread.also {
+        it.transformChildren(this, null)
     }
 
     override fun visitBlock(expression: IrBlock): IrBlock {
@@ -475,8 +476,8 @@ private class ScriptToClassTransformer(
                 arguments
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -533,8 +534,8 @@ private class ScriptToClassTransformer(
                 expression.origin
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -553,8 +554,8 @@ private class ScriptToClassTransformer(
                 superQualifierSymbol
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -574,8 +575,8 @@ private class ScriptToClassTransformer(
                 superQualifierSymbol
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -732,8 +733,8 @@ private class ScriptToClassTransformer(
                 expression.origin
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -781,8 +782,8 @@ private class ScriptToClassTransformer(
                 expression.argument
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -798,8 +799,8 @@ private class ScriptToClassTransformer(
                 expression.branches
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -814,8 +815,8 @@ private class ScriptToClassTransformer(
                 expression.loop
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -830,8 +831,8 @@ private class ScriptToClassTransformer(
                 expression.loop
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -848,8 +849,8 @@ private class ScriptToClassTransformer(
                 expression.finallyExpression
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -865,8 +866,8 @@ private class ScriptToClassTransformer(
                 expression.value
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -881,8 +882,8 @@ private class ScriptToClassTransformer(
                 expression.value
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -897,8 +898,8 @@ private class ScriptToClassTransformer(
                 expression.operator
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
@@ -914,8 +915,8 @@ private class ScriptToClassTransformer(
                 expression.receiver
             ).copyAttributes(expression)
         }
-        return remappedExpression.apply {
-            transformChildren()
+        return remappedExpression.also {
+            it.transformChildren(this, null)
         }
     }
 
