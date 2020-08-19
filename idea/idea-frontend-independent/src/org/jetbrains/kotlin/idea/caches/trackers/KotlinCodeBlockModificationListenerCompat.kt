@@ -94,6 +94,7 @@ abstract class KotlinCodeBlockModificationListenerCompat(protected val project: 
                         incOutCodeBlockCounter(ktFile)
                     }
 
+                    KotlinJavaPsiFacade.getInstance(project).clearClassCaches()
                     ktFile.incOutOfBlockModificationCount()
                 } else if (physical) {
                     inBlockElements.forEach { it.containingKtFile.addInBlockModifiedItem(it) }

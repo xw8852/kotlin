@@ -42,12 +42,14 @@ import kotlin.collections.CollectionsKt;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.kotlin.asJava.KtLightClassMarker;
+import org.jetbrains.kotlin.descriptors.Visibility;
 import org.jetbrains.kotlin.idea.KotlinLanguage;
 import org.jetbrains.kotlin.load.java.JavaClassFinder;
-import org.jetbrains.kotlin.load.java.structure.JavaClass;
+import org.jetbrains.kotlin.load.java.structure.*;
 import org.jetbrains.kotlin.load.java.structure.impl.JavaClassImpl;
 import org.jetbrains.kotlin.name.ClassId;
 import org.jetbrains.kotlin.name.FqName;
+import org.jetbrains.kotlin.name.Name;
 import org.jetbrains.kotlin.progress.ProgressIndicatorAndCompilationCanceledStatus;
 
 import java.util.*;
@@ -68,13 +70,32 @@ public class KotlinJavaPsiFacade {
         }
     }
 
+    private static class ClassCache {
+        final ConcurrentMap<Pair<String, GlobalSearchScope>, JavaClass> classInScopeCache = new SLRUConcurrentMap<>(1000);
+        final ConcurrentMap<Pair<String, GlobalSearchScope>, JavaClass> classInLibScopeCache = ContainerUtil.newConcurrentMap();
+
+        void clear(boolean force) {
+            classInScopeCache.clear();
+            if (force) {
+                classInLibScopeCache.clear();
+            }
+        }
+    }
+
     private static final PsiPackage NULL_PACKAGE = new PsiPackageImpl(null, "NULL_PACKAGE");
 
     private static @Nullable PsiPackage unwrap(@NotNull PsiPackage psiPackage) {
         return psiPackage == NULL_PACKAGE ? null : psiPackage;
     }
 
+    private static final JavaClass NULL_CLASS = new JavaNullClass();
+
+    private static @Nullable JavaClass unwrap(@NotNull JavaClass javaClass) {
+        return javaClass == NULL_CLASS ? null : javaClass;
+    }
+
     private volatile SoftReference<PackageCache> packageCache;
+    private volatile SoftReference<ClassCache> classCache;
 
     private final Project project;
     private final LightModifierList emptyModifierList;
@@ -90,9 +111,20 @@ public class KotlinJavaPsiFacade {
     }
 
     public void clearPackageCaches() {
-        PackageCache cache = SoftReference.dereference(packageCache);
+        PackageCache packageCache = SoftReference.dereference(this.packageCache);
+        if (packageCache != null) {
+            packageCache.clear();
+        }
+        ClassCache classCache = SoftReference.dereference(this.classCache);
+        if (classCache != null) {
+            classCache.clear(true);
+        }
+    }
+
+    public void clearClassCaches() {
+        ClassCache cache = SoftReference.dereference(classCache);
         if (cache != null) {
-            cache.clear();
+            cache.clear(false);
         }
     }
 
@@ -105,6 +137,25 @@ public class KotlinJavaPsiFacade {
 
         ClassId classId = request.getClassId();
         String qualifiedName = classId.asSingleFqName().asString();
+        if (qualifiedName.endsWith(CompletionUtilCore.DUMMY_IDENTIFIER_TRIMMED)) {
+            return null;
+        }
+
+        ClassCache cache = SoftReference.dereference(classCache);
+        if (cache == null) {
+            classCache = new SoftReference<>(cache = new ClassCache());
+        }
+
+        Pair<String, GlobalSearchScope> key = new Pair<>(qualifiedName, scope);
+        JavaClass jClass = cache.classInLibScopeCache.get(key);
+        if (jClass != null) {
+            return unwrap(jClass);
+        }
+
+        jClass = cache.classInScopeCache.get(key);
+        if (jClass != null) {
+            return unwrap(jClass);
+        }
 
         if (shouldUseSlowResolve()) {
             PsiClass[] classes = findClassesInDumbMode(qualifiedName, scope);
@@ -114,19 +165,32 @@ public class KotlinJavaPsiFacade {
             return null;
         }
 
-        for (KotlinPsiElementFinderWrapper finder : finders()) {
-            ProgressIndicatorAndCompilationCanceledStatus.checkCanceled();
-            if (finder instanceof CliFinder) {
-                JavaClass aClass = ((CliFinder) finder).findClass(request, scope);
-                if (aClass != null) return aClass;
-            }
-            else {
-                PsiClass aClass = finder.findClass(qualifiedName, scope);
-                if (aClass != null) return createJavaClass(classId, aClass);
+        boolean isALibraryScope = (scope instanceof DelegatingGlobalSearchScope) &&
+                                        ((DelegatingGlobalSearchScope) scope).isSearchInLibraries();
+
+        // store found class in non-LRU cache if class is found in library search scope
+        {
+            ConcurrentMap<Pair<String, GlobalSearchScope>, JavaClass> existedClassInScopeCache =
+                    isALibraryScope ? cache.classInLibScopeCache : cache.classInScopeCache;
+
+            for (KotlinPsiElementFinderWrapper finder : finders()) {
+                ProgressIndicatorAndCompilationCanceledStatus.checkCanceled();
+                if (finder instanceof CliFinder) {
+                    JavaClass aClass = ((CliFinder) finder).findClass(request, scope);
+                    if (aClass != null) {
+                        return unwrap(ConcurrencyUtil.cacheOrGet(existedClassInScopeCache, key, aClass));
+                    }
+                }
+                else {
+                    PsiClass aClass = finder.findClass(qualifiedName, scope);
+                    if (aClass != null) {
+                        return unwrap(ConcurrencyUtil.cacheOrGet(existedClassInScopeCache, key, createJavaClass(classId, aClass)));
+                    }
+                }
             }
         }
 
-        return null;
+        return unwrap(ConcurrencyUtil.cacheOrGet(cache.classInScopeCache, key, NULL_CLASS));
     }
 
     @NotNull
@@ -260,44 +324,46 @@ public class KotlinJavaPsiFacade {
         // (till PROJECT_ROOTS or specific VFS changes)
         boolean packageLikeQName = qualifiedName.indexOf('.') > 0;
 
-        // store found package in non-LRU cache if package found in library search scope
-        ConcurrentMap<Pair<String, GlobalSearchScope>, PsiPackage> existedPackageInScopeCache =
-                isALibrarySearchScope ? cache.packageInLibScopeCache : cache.packageInScopeCache;
+        // store found package in non-LRU cache if package is found in library search scope
+        {
+            ConcurrentMap<Pair<String, GlobalSearchScope>, PsiPackage> existedPackageInScopeCache =
+                    isALibrarySearchScope ? cache.packageInLibScopeCache : cache.packageInScopeCache;
 
-        KotlinPsiElementFinderWrapper[] finders = filteredFinders();
-        if (packageFoundInAllScope != null) {
-            // Package was found in AllScope with some of finders but is absent in packageCache for current scope.
-            // We check only finders that depend on scope.
-            for (KotlinPsiElementFinderWrapper finder : finders) {
-                if (!finder.isSameResultForAnyScope()) {
+            KotlinPsiElementFinderWrapper[] finders = filteredFinders();
+            if (packageFoundInAllScope != null) {
+                // Package was found in AllScope with some of finders but is absent in packageCache for current scope.
+                // We check only finders that depend on scope.
+                for (KotlinPsiElementFinderWrapper finder : finders) {
+                    if (!finder.isSameResultForAnyScope()) {
+                        PsiPackage aPackage = finder.findPackage(qualifiedName, searchScope);
+                        if (aPackage != null) {
+                            return unwrap(ConcurrencyUtil.cacheOrGet(existedPackageInScopeCache, key, aPackage));
+                        }
+                    }
+                }
+            }
+            else {
+                for (KotlinPsiElementFinderWrapper finder : finders) {
                     PsiPackage aPackage = finder.findPackage(qualifiedName, searchScope);
+
                     if (aPackage != null) {
-                        return ConcurrencyUtil.cacheOrGet(existedPackageInScopeCache, key, aPackage);
+                        return unwrap(ConcurrencyUtil.cacheOrGet(existedPackageInScopeCache, key, aPackage));
                     }
                 }
-            }
-        }
-        else {
-            for (KotlinPsiElementFinderWrapper finder : finders) {
-                PsiPackage aPackage = finder.findPackage(qualifiedName, searchScope);
 
-                if (aPackage != null) {
-                    return ConcurrencyUtil.cacheOrGet(existedPackageInScopeCache, key, aPackage);
-                }
-            }
-
-            boolean found = false;
-            for (KotlinPsiElementFinderWrapper finder : finders) {
-                if (!finder.isSameResultForAnyScope()) {
-                    PsiPackage aPackage = finder.findPackage(qualifiedName, GlobalSearchScope.allScope(project));
-                    if (aPackage != null) {
-                        found = true;
-                        break;
+                boolean found = false;
+                for (KotlinPsiElementFinderWrapper finder : finders) {
+                    if (!finder.isSameResultForAnyScope()) {
+                        PsiPackage aPackage = finder.findPackage(qualifiedName, GlobalSearchScope.allScope(project));
+                        if (aPackage != null) {
+                            found = true;
+                            break;
+                        }
                     }
                 }
-            }
 
-            cache.hasPackageInAllScopeCache.put(qualifiedName, found);
+                cache.hasPackageInAllScopeCache.put(qualifiedName, found);
+            }
         }
 
         ConcurrentMap<Pair<String, GlobalSearchScope>, PsiPackage> notFoundPackageInScopeCache =
@@ -307,9 +373,7 @@ public class KotlinJavaPsiFacade {
                 isALibrarySearchScope && packageLikeQName ?
                 cache.packageInLibScopeCache : cache.packageInScopeCache;
 
-        ConcurrencyUtil.cacheOrGet(notFoundPackageInScopeCache, key, NULL_PACKAGE);
-
-        return null;
+        return unwrap(ConcurrencyUtil.cacheOrGet(notFoundPackageInScopeCache, key, NULL_PACKAGE));
     }
 
     @NotNull
@@ -505,8 +569,7 @@ public class KotlinJavaPsiFacade {
         @Override
         public V get(Object key) {
             synchronized (map) {
-                V v = map.get((K) key);
-                return v;
+                return map.get((K) key);
             }
         }
 
@@ -565,6 +628,137 @@ public class KotlinJavaPsiFacade {
         @Override
         public String toString() {
             return "SLUConcurrentMap{" + map + '}';
+        }
+    }
+
+    private static class JavaNullClass implements JavaClass {
+        @Nullable
+        @Override
+        public FqName getFqName() {
+            throw new UnsupportedOperationException("#getFqName");
+        }
+
+        @NotNull
+        @Override
+        public Collection<JavaClassifierType> getSupertypes() {
+            throw new UnsupportedOperationException("#getSupertypes");
+        }
+
+        @NotNull
+        @Override
+        public Collection<Name> getInnerClassNames() {
+            throw new UnsupportedOperationException("#getInnerClassNames");
+        }
+
+        @Nullable
+        @Override
+        public JavaClass findInnerClass(@NotNull Name name) {
+            throw new UnsupportedOperationException("#findInnerClass");
+        }
+
+        @Nullable
+        @Override
+        public JavaClass getOuterClass() {
+            throw new UnsupportedOperationException("#getOuterClass");
+        }
+
+        @Override
+        public boolean isInterface() {
+            throw new UnsupportedOperationException("#isInterface");
+        }
+
+        @Override
+        public boolean isAnnotationType() {
+            throw new UnsupportedOperationException("#isAnnotationType");
+        }
+
+        @Override
+        public boolean isEnum() {
+            throw new UnsupportedOperationException("#isEnum");
+        }
+
+        @Nullable
+        @Override
+        public LightClassOriginKind getLightClassOriginKind() {
+            throw new UnsupportedOperationException("#getLightClassOriginKind");
+        }
+
+        @NotNull
+        @Override
+        public Collection<JavaMethod> getMethods() {
+            throw new UnsupportedOperationException("#getMethods()");
+        }
+
+        @NotNull
+        @Override
+        public Collection<JavaField> getFields() {
+            throw new UnsupportedOperationException("#getFields()");
+        }
+
+        @NotNull
+        @Override
+        public Collection<JavaConstructor> getConstructors() {
+            throw new UnsupportedOperationException("#getConstructors()");
+        }
+
+        @Override
+        public boolean hasDefaultConstructor() {
+            throw new UnsupportedOperationException("#hasDefaultConstructor()");
+        }
+
+        @NotNull
+        @Override
+        public Collection<JavaAnnotation> getAnnotations() {
+            throw new UnsupportedOperationException("#getAnnotations()");
+        }
+
+        @Nullable
+        @Override
+        public JavaAnnotation findAnnotation(@NotNull FqName fqName) {
+            throw new UnsupportedOperationException("#findAnnotation(FqName)");
+        }
+
+        @Override
+        public boolean isDeprecatedInJavaDoc() {
+            throw new UnsupportedOperationException("#isDeprecatedInJavaDoc()");
+        }
+
+        @Override
+        public boolean isAbstract() {
+            throw new UnsupportedOperationException("#isAbstract()");
+        }
+
+        @Override
+        public boolean isStatic() {
+            throw new UnsupportedOperationException("#isStatic()");
+        }
+
+        @Override
+        public boolean isFinal() {
+            throw new UnsupportedOperationException("#isFinal()");
+        }
+
+        @NotNull
+        @Override
+        public Visibility getVisibility() {
+            throw new UnsupportedOperationException("#getVisibility()");
+        }
+
+        @NotNull
+        @Override
+        public Name getName() {
+            throw new UnsupportedOperationException("#getName()");
+        }
+
+        @NotNull
+        @Override
+        public List<JavaTypeParameter> getTypeParameters() {
+            throw new UnsupportedOperationException("#getTypeParameters()");
+        }
+
+        @Override
+        public String toString() {
+            return "NULL_CLASS";
         }
     }
 }
