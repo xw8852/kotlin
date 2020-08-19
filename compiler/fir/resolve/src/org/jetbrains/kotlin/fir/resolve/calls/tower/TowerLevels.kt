@@ -132,7 +132,6 @@ class MemberScopeTowerLevel(
         return when (token) {
             is TowerScopeLevel.Token.Properties -> processMembers(processor) { consumer ->
                 this.processPropertiesByName(name) {
-                    with(bodyResolveComponents) { it.phasedFir }
                     // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
                     @Suppress("UNCHECKED_CAST")
                     consumer(it as T)
@@ -143,7 +142,6 @@ class MemberScopeTowerLevel(
                     name, session, bodyResolveComponents,
                     includeInnerConstructors = true,
                     processor = {
-                        with(bodyResolveComponents) { it.phasedFir }
                         // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
                         @Suppress("UNCHECKED_CAST")
                         consumer(it as T)
@@ -152,7 +150,6 @@ class MemberScopeTowerLevel(
             }
             TowerScopeLevel.Token.Objects -> processMembers(processor) { consumer ->
                 this.processClassifiersByName(name) {
-                    with(bodyResolveComponents) { it.phasedFir }
                     // WARNING, DO NOT CAST FUNCTIONAL TYPE ITSELF
                     @Suppress("UNCHECKED_CAST")
                     consumer(it as T)
