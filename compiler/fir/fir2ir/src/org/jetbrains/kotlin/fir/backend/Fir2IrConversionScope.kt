@@ -5,7 +5,9 @@
 
 package org.jetbrains.kotlin.fir.backend
 
+import org.jetbrains.kotlin.fir.declarations.FirCallableMemberDeclaration
 import org.jetbrains.kotlin.fir.declarations.FirClass
+import org.jetbrains.kotlin.fir.declarations.FirProperty
 import org.jetbrains.kotlin.fir.declarations.FirSimpleFunction
 import org.jetbrains.kotlin.fir.expressions.FirReturnExpression
 import org.jetbrains.kotlin.ir.declarations.*
@@ -15,6 +17,8 @@ class Fir2IrConversionScope {
     private val parentStack = mutableListOf<IrDeclarationParent>()
 
     private val containingFirClassStack = mutableListOf<FirClass<*>>()
+
+    private val containingFirCallableStack = mutableListOf<FirCallableMemberDeclaration<*>>()
 
     fun <T : IrDeclarationParent?> withParent(parent: T, f: T.() -> Unit): T {
         if (parent == null) return parent
@@ -49,20 +53,36 @@ class Fir2IrConversionScope {
 
     fun containerFirClass(): FirClass<*>? = containingFirClassStack.lastOrNull()
 
+    fun containerClasses(): List<FirClass<*>> = containingFirClassStack
+
+    fun containerCallables(): List<FirCallableMemberDeclaration<*>> = containingFirCallableStack
+
     private val functionStack = mutableListOf<IrFunction>()
 
-    fun <T : IrFunction> withFunction(function: T, f: T.() -> Unit): T {
+    fun <T : IrFunction, F : FirCallableMemberDeclaration<*>> withFunction(function: T, firFunction: F?, f: T.() -> Unit): T {
         functionStack += function
+        if (firFunction != null) {
+            containingFirCallableStack += firFunction
+        }
         function.f()
+        if (firFunction != null) {
+            containingFirCallableStack.removeAt(containingFirCallableStack.size - 1)
+        }
         functionStack.removeAt(functionStack.size - 1)
         return function
     }
 
     private val propertyStack = mutableListOf<IrProperty>()
 
-    fun withProperty(property: IrProperty, f: IrProperty.() -> Unit): IrProperty {
+    fun withProperty(property: IrProperty, firProperty: FirProperty?, f: IrProperty.() -> Unit): IrProperty {
         propertyStack += property
+        if (firProperty != null) {
+            containingFirCallableStack += firProperty
+        }
         property.f()
+        if (firProperty != null) {
+            containingFirCallableStack.removeAt(containingFirCallableStack.size - 1)
+        }
         propertyStack.removeAt(propertyStack.size - 1)
         return property
     }

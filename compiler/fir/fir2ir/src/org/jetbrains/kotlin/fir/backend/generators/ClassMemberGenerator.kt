@@ -231,7 +231,7 @@ internal class ClassMemberGenerator(
         isGetter: Boolean,
         containingClass: FirClass<*>?
     ) {
-        conversionScope.withFunction(this) {
+        conversionScope.withFunction(this, null) {
             applyParentFromStackTo(this)
             convertFunctionContent(this, propertyAccessor, containingClass = null)
             if (isDefault) {

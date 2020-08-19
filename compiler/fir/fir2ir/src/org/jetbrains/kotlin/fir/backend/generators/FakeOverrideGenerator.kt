@@ -34,11 +34,11 @@ class FakeOverrideGenerator(
 ) {
 
     private fun IrSimpleFunction.withFunction(f: IrSimpleFunction.() -> Unit): IrSimpleFunction {
-        return conversionScope.withFunction(this, f)
+        return conversionScope.withFunction(this, null, f)
     }
 
     private fun IrProperty.withProperty(f: IrProperty.() -> Unit): IrProperty {
-        return conversionScope.withProperty(this, f)
+        return conversionScope.withProperty(this, null, f)
     }
 
     private fun FirCallableMemberDeclaration<*>.allowsToHaveFakeOverrideIn(klass: FirClass<*>): Boolean {

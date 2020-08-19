@@ -209,7 +209,7 @@ class Fir2IrVisitor(
 
     override fun visitConstructor(constructor: FirConstructor, data: Any?): IrElement {
         val irConstructor = declarationStorage.getCachedIrConstructor(constructor)!!
-        return conversionScope.withFunction(irConstructor) {
+        return conversionScope.withFunction(irConstructor, constructor) {
             memberGenerator.convertFunctionContent(irConstructor, constructor, containingClass = conversionScope.containerFirClass())
         }
     }
@@ -230,7 +230,7 @@ class Fir2IrVisitor(
         } else {
             declarationStorage.getCachedIrFunction(simpleFunction)!!
         }
-        return conversionScope.withFunction(irFunction) {
+        return conversionScope.withFunction(irFunction, simpleFunction) {
             memberGenerator.convertFunctionContent(
                 irFunction, simpleFunction, containingClass = conversionScope.containerFirClass()
             )
@@ -242,7 +242,7 @@ class Fir2IrVisitor(
             val irFunction = declarationStorage.createIrFunction(
                 anonymousFunction, irParent = conversionScope.parent(), isLocal = true
             )
-            conversionScope.withFunction(irFunction) {
+            conversionScope.withFunction(irFunction, null) {
                 memberGenerator.convertFunctionContent(irFunction, anonymousFunction, containingClass = null)
             }
 
@@ -270,7 +270,7 @@ class Fir2IrVisitor(
     override fun visitProperty(property: FirProperty, data: Any?): IrElement {
         if (property.isLocal) return visitLocalVariable(property)
         val irProperty = declarationStorage.getCachedIrProperty(property)!!
-        return conversionScope.withProperty(irProperty) {
+        return conversionScope.withProperty(irProperty, property) {
             memberGenerator.convertPropertyContent(irProperty, property, containingClass = conversionScope.containerFirClass())
         }
     }
