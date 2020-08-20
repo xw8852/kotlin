@@ -73,18 +73,6 @@ class FirTowerResolverSession internal constructor(
     }
 
 
-    fun runResolutionForDelegatingConstructor(info: CallInfo, constructorClassSymbol: FirClassSymbol<*>) {
-        val mainTask = createTask(
-            TowerLevelHandler(
-                candidateFactoriesAndCollectors.resultCollector,
-                candidateFactoriesAndCollectors.candidateFactory,
-                candidateFactoriesAndCollectors.stubReceiverCandidateFactory
-            )
-        )
-        manager.enqueueResolverTask { mainTask.runResolverForDelegatingConstructorCall(info, constructorClassSymbol) }
-    }
-
-
     private fun enqueueResolveForNoReceiver(info: CallInfo, mainTask: FirTowerResolveTask) {
         manager.enqueueResolverTask { mainTask.runResolverForNoReceiver(info) }
         invokeResolver.enqueueResolveTasksForNoReceiver(info)

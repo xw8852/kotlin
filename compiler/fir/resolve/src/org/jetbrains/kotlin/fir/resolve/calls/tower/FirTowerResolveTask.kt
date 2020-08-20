@@ -77,9 +77,6 @@ internal abstract class FirBaseTowerResolveTask(
         extensionReceiver, extensionsOnly, includeInnerConstructors
     )
 
-    protected fun FirScope.toConstructorScopeTowerLevel(): ConstructorScopeTowerLevel =
-        ConstructorScopeTowerLevel(session, this)
-
     protected fun ReceiverValue.toMemberScopeTowerLevel(
         extensionReceiver: ReceiverValue? = null,
         implicitExtensionInvokeMode: Boolean = false
@@ -245,25 +242,6 @@ internal open class FirTowerResolveTask(
             implicitReceiverValue.toMemberScopeTowerLevel(extensionReceiver = explicitReceiverValue),
             info, parentGroup.Member, ExplicitReceiverKind.EXTENSION_RECEIVER
         )
-    }
-
-    suspend fun runResolverForDelegatingConstructorCall(info: CallInfo, constructorClassSymbol: FirClassSymbol<*>) {
-        val scope = constructorClassSymbol.fir.unsubstitutedScope(session, components.scopeSession)
-        if (constructorClassSymbol is FirRegularClassSymbol && constructorClassSymbol.fir.isInner) {
-            // Search for inner constructors only
-            for ((implicitReceiverValue, depth) in resolverSession.implicitReceivers.drop(1)) {
-                processLevel(
-                    implicitReceiverValue.toMemberScopeTowerLevel(),
-                    info.copy(name = constructorClassSymbol.fir.name), TowerGroup.Implicit(depth)
-                )
-            }
-        } else {
-            // Search for non-inner constructors only
-            processLevel(
-                scope.toConstructorScopeTowerLevel(),
-                info, TowerGroup.Member
-            )
-        }
     }
 
     suspend fun runResolverForNoReceiver(
