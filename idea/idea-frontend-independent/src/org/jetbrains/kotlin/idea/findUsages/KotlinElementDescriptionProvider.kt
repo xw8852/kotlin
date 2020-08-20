@@ -113,6 +113,24 @@ class KotlinElementDescriptionProvider : ElementDescriptionProvider {
         )
     }
 
+    //TODO Copied from stringUtil.kt
+    private fun String.collapseSpaces(): String {
+        val builder = StringBuilder()
+        var haveSpaces = false
+        for (c in this) {
+            if (c.isWhitespace()) {
+                haveSpaces = true
+            } else {
+                if (haveSpaces) {
+                    builder.append(" ")
+                    haveSpaces = false
+                }
+                builder.append(c)
+            }
+        }
+        return builder.toString()
+    }
+
     override fun getElementDescription(element: PsiElement, location: ElementDescriptionLocation): String? {
         val shouldUnwrap = location !is UsageViewShortNameLocation && location !is UsageViewLongNameLocation
         val targetElement = if (shouldUnwrap) element.unwrapped ?: element else element
