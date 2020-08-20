@@ -16,9 +16,12 @@
 
 package org.jetbrains.kotlin.ir.util
 
+import org.jetbrains.kotlin.ir.IrElement
 import org.jetbrains.kotlin.ir.symbols.*
 
 interface SymbolRemapper {
+    fun acceptElement(element: IrElement)
+
     fun getDeclaredClass(symbol: IrClassSymbol): IrClassSymbol
     fun getDeclaredFunction(symbol: IrSimpleFunctionSymbol): IrSimpleFunctionSymbol
     fun getDeclaredProperty(symbol: IrPropertySymbol): IrPropertySymbol

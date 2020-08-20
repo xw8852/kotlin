@@ -25,10 +25,10 @@ import java.util.*
 
 inline fun <reified T : IrElement> T.deepCopyWithSymbols(
     initialParent: IrDeclarationParent? = null,
+    symbolRemapper: SymbolRemapper = DeepCopySymbolRemapper(),
     createCopier: (SymbolRemapper, TypeRemapper) -> DeepCopyIrTreeWithSymbols = ::DeepCopyIrTreeWithSymbols
 ): T {
-    val symbolRemapper = DeepCopySymbolRemapper()
-    acceptVoid(symbolRemapper)
+    symbolRemapper.acceptElement(this)
     val typeRemapper = DeepCopyTypeRemapper(symbolRemapper)
     return transform(createCopier(symbolRemapper, typeRemapper), null).patchDeclarationParents(initialParent) as T
 }

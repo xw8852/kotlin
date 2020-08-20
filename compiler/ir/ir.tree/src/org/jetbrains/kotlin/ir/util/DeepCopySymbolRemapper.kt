@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.ir.symbols.*
 import org.jetbrains.kotlin.ir.symbols.impl.*
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
+import org.jetbrains.kotlin.ir.visitors.acceptVoid
 
 @OptIn(ObsoleteDescriptorBasedAPI::class)
 open class DeepCopySymbolRemapper(
@@ -46,6 +47,10 @@ open class DeepCopySymbolRemapper(
     private val variables = hashMapOf<IrVariableSymbol, IrVariableSymbol>()
     private val localDelegatedProperties = hashMapOf<IrLocalDelegatedPropertySymbol, IrLocalDelegatedPropertySymbol>()
     private val typeAliases = hashMapOf<IrTypeAliasSymbol, IrTypeAliasSymbol>()
+
+    override fun acceptElement(element: IrElement) {
+        element.acceptVoid(this)
+    }
 
     override fun visitElement(element: IrElement) {
         element.acceptChildrenVoid(this)

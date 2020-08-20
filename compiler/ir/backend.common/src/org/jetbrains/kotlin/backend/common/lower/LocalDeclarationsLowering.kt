@@ -28,10 +28,7 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.types.impl.IrTypeAbbreviationImpl
 import org.jetbrains.kotlin.ir.types.impl.makeTypeProjection
-import org.jetbrains.kotlin.ir.util.constructedClass
-import org.jetbrains.kotlin.ir.util.file
-import org.jetbrains.kotlin.ir.util.parentAsClass
-import org.jetbrains.kotlin.ir.util.render
+import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.acceptVoid
@@ -251,12 +248,13 @@ class LocalDeclarationsLowering(
         private fun insertLoweredDeclarationForLocalFunctions() {
             localFunctions.values.forEach {
                 it.transformedDeclaration.apply {
+                    val extendedRemapper = ExtendedSymbolRemapper(it.capturedTypeParameterToTypeParameter, it.capturedValueToParameter)
                     val original = it.declaration
-                    this.body = original.body
+                    this.body = original.body?.deepCopyWithSymbols(this, extendedRemapper)
 
                     original.valueParameters.filter { v -> v.defaultValue != null }.forEach { argument ->
                         val body = argument.defaultValue!!
-                        oldParameterToNew[argument]!!.defaultValue = body
+                        oldParameterToNew[argument]!!.defaultValue = body.deepCopyWithSymbols(this, extendedRemapper)
                     }
                     acceptChildren(SetDeclarationsParentVisitor, this)
                 }
@@ -511,7 +509,7 @@ class LocalDeclarationsLowering(
         private fun createNewCall(oldCall: IrCall, newCallee: IrSimpleFunction) =
             IrCallImpl(
                 oldCall.startOffset, oldCall.endOffset,
-                newCallee.returnType,
+                oldCall.type,
                 newCallee.symbol,
                 typeArgumentsCount = newCallee.typeParameters.size,
                 valueArgumentsCount = newCallee.valueParameters.size,
@@ -525,7 +523,7 @@ class LocalDeclarationsLowering(
         private fun createNewCall(oldCall: IrConstructorCall, newCallee: IrConstructor) =
             IrConstructorCallImpl.fromSymbolOwner(
                 oldCall.startOffset, oldCall.endOffset,
-                newCallee.returnType,
+                oldCall.type,
                 newCallee.symbol,
                 newCallee.parentAsClass.typeParameters.size,
                 oldCall.origin
@@ -608,6 +606,9 @@ class LocalDeclarationsLowering(
                 capturedTypeParameters.zip(newTypeParameters)
             )
             newDeclaration.copyTypeParametersFrom(oldDeclaration, parameterMap = localFunctionContext.capturedTypeParameterToTypeParameter)
+            localFunctionContext.capturedTypeParameterToTypeParameter.putAll(
+                oldDeclaration.typeParameters.zip(newDeclaration.typeParameters.drop(newTypeParameters.size))
+            )
             // Type parameters of oldDeclaration may depend on captured type parameters, so deal with that after copying.
             newDeclaration.typeParameters.drop(newTypeParameters.size).forEach { tp ->
                 tp.superTypes.replaceAll { localFunctionContext.remapType(it) }
