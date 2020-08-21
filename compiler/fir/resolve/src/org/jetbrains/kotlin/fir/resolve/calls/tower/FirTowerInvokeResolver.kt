@@ -279,7 +279,6 @@ private class InvokeFunctionResolveTask(
     override fun interceptTowerGroup(towerGroup: TowerGroup): TowerGroup =
         maxOf(towerGroup.InvokeResolvePriority(InvokeResolvePriority.COMMON_INVOKE), receiverGroup)
 
-
     suspend fun runResolverForInvoke(
         info: CallInfo,
         invokeReceiverValue: ExpressionReceiverValue,
@@ -309,17 +308,6 @@ private class InvokeFunctionResolveTask(
             }
         )
     }
-
-    private suspend fun processLevelForRegularInvoke(
-        towerLevel: SessionBasedTowerLevel,
-        callInfo: CallInfo,
-        group: TowerGroup,
-        explicitReceiverKind: ExplicitReceiverKind
-    ) = processLevel(
-        towerLevel, callInfo,
-        group.InvokeResolvePriority(InvokeResolvePriority.COMMON_INVOKE),
-        explicitReceiverKind, /*InvokeResolveMode.IMPLICIT_CALL_ON_GIVEN_RECEIVER*/
-    )
 
     // Here we already know extension receiver for invoke, and it's stated in info as first argument
     suspend fun runResolverForBuiltinInvokeExtensionWithExplicitArgument(
@@ -359,4 +347,15 @@ private class InvokeFunctionResolveTask(
             )
         }
     }
+
+    private suspend fun processLevelForRegularInvoke(
+        towerLevel: SessionBasedTowerLevel,
+        callInfo: CallInfo,
+        group: TowerGroup,
+        explicitReceiverKind: ExplicitReceiverKind
+    ) = processLevel(
+        towerLevel, callInfo,
+        group.InvokeResolvePriority(InvokeResolvePriority.COMMON_INVOKE),
+        explicitReceiverKind, /*InvokeResolveMode.IMPLICIT_CALL_ON_GIVEN_RECEIVER*/
+    )
 }

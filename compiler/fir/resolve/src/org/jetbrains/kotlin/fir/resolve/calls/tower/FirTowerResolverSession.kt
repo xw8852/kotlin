@@ -52,32 +52,6 @@ class FirTowerResolverSession internal constructor(
         }
     }
 
-    internal inline fun enumerateTowerLevels(
-        parentGroup: TowerGroup = TowerGroup.EmptyRoot,
-        onScope: (FirScope, TowerGroup) -> Unit,
-        onImplicitReceiver: (ImplicitReceiverValue<*>, TowerGroup) -> Unit,
-    ) {
-        for ((index, localScope) in localScopes.withIndex()) {
-            onScope(localScope, parentGroup.Local(index))
-        }
-
-        for ((depth, lexical) in nonLocalTowerDataElements.withIndex()) {
-            if (!lexical.isLocal && lexical.scope != null) {
-                onScope(lexical.scope, parentGroup.NonLocal(depth))
-            }
-
-            lexical.implicitReceiver?.let { implicitReceiverValue ->
-                onImplicitReceiver(implicitReceiverValue, parentGroup.Implicit(depth))
-            }
-        }
-    }
-
-
-    private fun enqueueResolveForNoReceiver(info: CallInfo, mainTask: FirTowerResolveTask) {
-        manager.enqueueResolverTask { mainTask.runResolverForNoReceiver(info) }
-        invokeResolver.enqueueResolveTasksForNoReceiver(info)
-    }
-
     fun runResolution(info: CallInfo) {
         val mainTask = createTask()
         when (val receiver = info.explicitReceiver) {
@@ -100,6 +74,30 @@ class FirTowerResolverSession internal constructor(
         }
     }
 
+    internal inline fun enumerateTowerLevels(
+        parentGroup: TowerGroup = TowerGroup.EmptyRoot,
+        onScope: (FirScope, TowerGroup) -> Unit,
+        onImplicitReceiver: (ImplicitReceiverValue<*>, TowerGroup) -> Unit,
+    ) {
+        for ((index, localScope) in localScopes.withIndex()) {
+            onScope(localScope, parentGroup.Local(index))
+        }
+
+        for ((depth, lexical) in nonLocalTowerDataElements.withIndex()) {
+            if (!lexical.isLocal && lexical.scope != null) {
+                onScope(lexical.scope, parentGroup.NonLocal(depth))
+            }
+
+            lexical.implicitReceiver?.let { implicitReceiverValue ->
+                onImplicitReceiver(implicitReceiverValue, parentGroup.Implicit(depth))
+            }
+        }
+    }
+
+    private fun enqueueResolveForNoReceiver(info: CallInfo, mainTask: FirTowerResolveTask) {
+        manager.enqueueResolverTask { mainTask.runResolverForNoReceiver(info) }
+        invokeResolver.enqueueResolveTasksForNoReceiver(info)
+    }
 
     private fun createTask() =
         FirTowerResolveTask(
