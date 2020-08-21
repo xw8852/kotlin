@@ -24,3 +24,41 @@ FILE: delegatedSuperType.kt
             public get(): R|B|
 
     }
+    public final fun bar(): R|kotlin/Unit| {
+        lval b: R|B| = R|/B.B|()
+        lval c: R|C| = R|/C.C|(R|<local>/b|)
+        R|<local>/c|.R|/A.foo|()
+    }
+    public abstract interface AA<T> : R|kotlin/Any| {
+        public abstract fun foo(x: R|T|): R|kotlin/Unit|
+
+    }
+    public final class BB<T> : R|AA<T>| {
+        public constructor<T>(y: R|T|): R|BB<T>| {
+            super<R|kotlin/Any|>()
+        }
+
+        public final val y: R|T| = R|<local>/y|
+            public get(): R|T|
+
+        public final override fun foo(x: R|T|): R|kotlin/Unit| {
+        }
+
+    }
+    public final class CC : R|AA<kotlin/String>| {
+        local final field <$$delegate_0>: R|AA<kotlin/String>|
+
+        public constructor(b: R|BB<kotlin/String>|): R|CC| {
+            super<R|kotlin/Any|>()
+            this@R|/CC|.R|<local>/<$$delegate_0>| = R|<local>/b|
+        }
+
+        public final val b: R|BB<kotlin/String>| = R|<local>/b|
+            public get(): R|BB<kotlin/String>|
+
+    }
+    public final fun baz(): R|kotlin/Unit| {
+        lval b: R|BB<kotlin/String>| = R|/BB.BB|<R|kotlin/String|>(String())
+        lval c: R|CC| = R|/CC.CC|(R|<local>/b|)
+        R|<local>/c|.R|FakeOverride</CC.foo: R|kotlin/Unit|>|(String())
+    }
