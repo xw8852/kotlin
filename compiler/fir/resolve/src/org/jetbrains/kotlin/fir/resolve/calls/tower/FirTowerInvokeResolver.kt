@@ -318,8 +318,7 @@ private class InvokeFunctionResolveTask(
         processLevel(
             invokeReceiverValue.toMemberScopeTowerLevel(),
             info, parentGroupForInvokeCandidates.Member.InvokeResolvePriority(InvokeResolvePriority.INVOKE_EXTENSION),
-            ExplicitReceiverKind.DISPATCH_RECEIVER,
-            /*   InvokeResolveMode.IMPLICIT_CALL_ON_GIVEN_RECEIVER*/
+            ExplicitReceiverKind.DISPATCH_RECEIVER
         )
     }
 
@@ -342,8 +341,7 @@ private class InvokeFunctionResolveTask(
                     implicitExtensionInvokeMode = true
                 ),
                 info, towerGroup,
-                ExplicitReceiverKind.DISPATCH_RECEIVER,
-                /* InvokeResolveMode.IMPLICIT_CALL_ON_GIVEN_RECEIVER*/
+                ExplicitReceiverKind.DISPATCH_RECEIVER
             )
         }
     }
@@ -356,6 +354,6 @@ private class InvokeFunctionResolveTask(
     ) = processLevel(
         towerLevel, callInfo,
         group.InvokeResolvePriority(InvokeResolvePriority.COMMON_INVOKE),
-        explicitReceiverKind, /*InvokeResolveMode.IMPLICIT_CALL_ON_GIVEN_RECEIVER*/
+        explicitReceiverKind
     )
 }
