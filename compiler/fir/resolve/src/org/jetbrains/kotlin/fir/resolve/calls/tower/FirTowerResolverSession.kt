@@ -79,13 +79,7 @@ class FirTowerResolverSession internal constructor(
     }
 
     fun runResolution(info: CallInfo) {
-        val mainTask = createTask(
-            TowerLevelHandler(
-                candidateFactoriesAndCollectors.resultCollector,
-                candidateFactoriesAndCollectors.candidateFactory,
-                candidateFactoriesAndCollectors.stubReceiverCandidateFactory
-            )
-        )
+        val mainTask = createTask()
         when (val receiver = info.explicitReceiver) {
             is FirResolvedQualifier -> {
                 manager.enqueueResolverTask { mainTask.runResolverForQualifierReceiver(info, receiver) }
@@ -107,7 +101,12 @@ class FirTowerResolverSession internal constructor(
     }
 
 
-    private fun createTask(handler: TowerLevelHandler) =
-        FirTowerResolveTask(this, handler)
+    private fun createTask() =
+        FirTowerResolveTask(
+            this,
+            candidateFactoriesAndCollectors.resultCollector,
+            candidateFactoriesAndCollectors.candidateFactory,
+            candidateFactoriesAndCollectors.stubReceiverCandidateFactory
+        )
 
 }

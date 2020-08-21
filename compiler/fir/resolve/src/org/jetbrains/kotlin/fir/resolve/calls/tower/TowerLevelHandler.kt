@@ -28,21 +28,21 @@ internal class CandidateFactoriesAndCollectors(
 )
 
 
-internal class TowerLevelHandler(
-    val collector: CandidateCollector,
-    val candidateFactory: CandidateFactory,
-    val stubReceiverCandidateFactory: CandidateFactory? = null
-) {
+internal class TowerLevelHandler {
 
     // Try to avoid adding additional state here
     private var processResult = ProcessorAction.NONE
 
     fun handleLevel(
+        collector: CandidateCollector,
+        candidateFactory: CandidateFactory,
+        stubReceiverCandidateFactory: CandidateFactory? = null,
         info: CallInfo,
         explicitReceiverKind: ExplicitReceiverKind,
         group: TowerGroup,
         towerLevel: SessionBasedTowerLevel
     ): ProcessorAction {
+        processResult = ProcessorAction.NONE
         val resultCollector = collector
         val processor =
             TowerScopeLevelProcessor(

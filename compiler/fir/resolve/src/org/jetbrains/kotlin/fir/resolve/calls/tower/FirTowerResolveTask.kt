@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.fir.resolve.calls.tower
 
-import org.jetbrains.kotlin.fir.declarations.isInner
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
 import org.jetbrains.kotlin.fir.resolve.calls.*
@@ -13,9 +12,6 @@ import org.jetbrains.kotlin.fir.resolve.scope
 import org.jetbrains.kotlin.fir.scopes.FirCompositeScope
 import org.jetbrains.kotlin.fir.scopes.FirScope
 import org.jetbrains.kotlin.fir.scopes.ProcessorAction
-import org.jetbrains.kotlin.fir.scopes.unsubstitutedScope
-import org.jetbrains.kotlin.fir.symbols.impl.FirClassSymbol
-import org.jetbrains.kotlin.fir.symbols.impl.FirRegularClassSymbol
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitBuiltinTypeRef
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
@@ -23,10 +19,14 @@ import org.jetbrains.kotlin.resolve.descriptorUtil.HIDES_MEMBERS_NAME_LIST
 
 internal abstract class FirBaseTowerResolveTask(
     protected val resolverSession: FirTowerResolverSession,
-    private val handler: TowerLevelHandler
+    protected val collector: CandidateCollector,
+    protected val candidateFactory: CandidateFactory,
+    protected val stubReceiverCandidateFactory: CandidateFactory? = null
 ) {
     protected val session get() = resolverSession.components.session
     protected val components get() = resolverSession.components
+
+    private val handler: TowerLevelHandler = TowerLevelHandler()
 
     open fun interceptTowerGroup(towerGroup: TowerGroup) = towerGroup
     open fun onSuccessfulLevel(towerGroup: TowerGroup) {}
@@ -45,12 +45,15 @@ internal abstract class FirBaseTowerResolveTask(
 
 
         val result = handler.handleLevel(
+            collector,
+            candidateFactory,
+            stubReceiverCandidateFactory,
             callInfo,
             explicitReceiverKind,
             finalGroup,
             towerLevel
         )
-        if (handler.collector.isSuccess()) onSuccessfulLevel(finalGroup)
+        if (collector.isSuccess()) onSuccessfulLevel(finalGroup)
         return result == ProcessorAction.NONE
 
     }
@@ -90,8 +93,10 @@ internal abstract class FirBaseTowerResolveTask(
 
 internal open class FirTowerResolveTask(
     resolverSession: FirTowerResolverSession,
-    handler: TowerLevelHandler
-) : FirBaseTowerResolveTask(resolverSession, handler) {
+    collector: CandidateCollector,
+    candidateFactory: CandidateFactory,
+    stubReceiverCandidateFactory: CandidateFactory? = null
+) : FirBaseTowerResolveTask(resolverSession, collector, candidateFactory, stubReceiverCandidateFactory) {
 
     private suspend fun processQualifierScopes(
         info: CallInfo, qualifierReceiver: QualifierReceiver?
