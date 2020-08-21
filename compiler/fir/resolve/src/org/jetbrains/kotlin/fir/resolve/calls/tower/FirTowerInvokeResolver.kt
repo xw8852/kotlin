@@ -270,7 +270,7 @@ private class InvokeReceiverResolveTask(
 
 private class InvokeFunctionResolveTask(
     resolverSession: FirTowerResolverSession,
-    val receiverGroup: TowerGroup,
+    private val receiverGroup: TowerGroup,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     stubReceiverCandidateFactory: CandidateFactory? = null
