@@ -47,7 +47,13 @@ private val validateIrBeforeLowering = makeCustomPhase<JvmBackendContext, IrModu
 )
 
 private val validateIrAfterLowering = makeCustomPhase<JvmBackendContext, IrModuleFragment>(
-    { context, module -> validationCallback(context, module, checkProperties = true) },
+    { context, module ->
+        validationCallback(
+            context,
+            module,
+            checkProperties = false, // after LocalDeclarationLowering, properties may not refer to their accessors
+        )
+    },
     name = "ValidateIrAfterLowering",
     description = "Validate IR after lowering"
 )
