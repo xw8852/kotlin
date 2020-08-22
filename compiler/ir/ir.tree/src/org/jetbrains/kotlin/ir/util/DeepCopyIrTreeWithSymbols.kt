@@ -145,6 +145,7 @@ open class DeepCopyIrTreeWithSymbols(
             superTypes = declaration.superTypes.map {
                 it.remapType()
             }
+            metadata = declaration.metadata
             thisReceiver = declaration.thisReceiver?.transform()
             declaration.transformDeclarationsTo(this)
         }.copyAttributes(declaration)
@@ -173,6 +174,7 @@ open class DeepCopyIrTreeWithSymbols(
             }
             correspondingPropertySymbol = declaration.correspondingPropertySymbol?.let { symbolRemapper.getReferencedProperty(it) }
             copyAttributes(declaration)
+            metadata = declaration.metadata
             transformFunctionChildren(declaration)
         }
 
@@ -190,6 +192,7 @@ open class DeepCopyIrTreeWithSymbols(
             isExpect = declaration.isExpect,
             containerSource = declaration.containerSource,
         ).apply {
+            metadata = declaration.metadata
             transformFunctionChildren(declaration)
         }
 
@@ -230,6 +233,7 @@ open class DeepCopyIrTreeWithSymbols(
             this.backingField = declaration.backingField?.transform()
             this.getter = declaration.getter?.transform()
             this.setter = declaration.setter?.transform()
+            this.metadata = declaration.metadata
         }
 
     override fun visitField(declaration: IrField): IrField =
@@ -247,6 +251,7 @@ open class DeepCopyIrTreeWithSymbols(
             transformAnnotations(declaration)
             initializer = declaration.initializer?.transform()
             correspondingPropertySymbol = declaration.correspondingPropertySymbol?.let{ symbolRemapper.getReferencedProperty(it) }
+            metadata = declaration.metadata
         }
 
     override fun visitLocalDelegatedProperty(declaration: IrLocalDelegatedProperty): IrLocalDelegatedProperty =
@@ -262,6 +267,7 @@ open class DeepCopyIrTreeWithSymbols(
             delegate = declaration.delegate.transform()
             getter = declaration.getter.transform()
             setter = declaration.setter?.transform()
+            metadata = declaration.metadata
         }
 
     override fun visitEnumEntry(declaration: IrEnumEntry): IrEnumEntry =
