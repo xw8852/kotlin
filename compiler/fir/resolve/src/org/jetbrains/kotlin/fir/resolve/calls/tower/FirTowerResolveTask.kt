@@ -5,8 +5,10 @@
 
 package org.jetbrains.kotlin.fir.resolve.calls.tower
 
+import org.jetbrains.kotlin.fir.asReversedFrozen
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
+import org.jetbrains.kotlin.fir.resolve.FirTowerDataContext
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.resolve.scope
 import org.jetbrains.kotlin.fir.scopes.FirCompositeScope
@@ -14,11 +16,24 @@ import org.jetbrains.kotlin.fir.scopes.FirScope
 import org.jetbrains.kotlin.fir.scopes.ProcessorAction
 import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.fir.types.impl.FirImplicitBuiltinTypeRef
+import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
 import org.jetbrains.kotlin.resolve.descriptorUtil.HIDES_MEMBERS_NAME_LIST
 
+
+internal class TowerDataElementsForName(
+    name: Name,
+    towerDataContext: FirTowerDataContext
+) {
+    val nonLocalTowerDataElements = towerDataContext.nonLocalTowerDataElements.asReversedFrozen()
+    val reversedFilteredLocalScopes by lazy(LazyThreadSafetyMode.NONE) {
+        towerDataContext.localScopes.asReversed().withIndex().filter { it.value.mayContainName(name) }
+    }
+}
+
 internal abstract class FirBaseTowerResolveTask(
     protected val resolverSession: FirTowerResolverSession,
+    protected val towerDataElementsForName: TowerDataElementsForName,
     protected val collector: CandidateCollector,
     protected val candidateFactory: CandidateFactory,
     protected val stubReceiverCandidateFactory: CandidateFactory? = null
@@ -62,6 +77,27 @@ internal abstract class FirBaseTowerResolveTask(
         scopeSession = components.scopeSession
     )
 
+
+    protected inline fun enumerateTowerLevels(
+        parentGroup: TowerGroup = TowerGroup.EmptyRoot,
+        onScope: (FirScope, TowerGroup) -> Unit,
+        onImplicitReceiver: (ImplicitReceiverValue<*>, TowerGroup) -> Unit,
+    ) {
+        for ((index, localScope) in towerDataElementsForName.reversedFilteredLocalScopes) {
+            onScope(localScope, parentGroup.Local(index))
+        }
+
+        for ((depth, lexical) in towerDataElementsForName.nonLocalTowerDataElements.withIndex()) {
+            if (!lexical.isLocal && lexical.scope != null) {
+                onScope(lexical.scope, parentGroup.NonLocal(depth))
+            }
+
+            lexical.implicitReceiver?.let { implicitReceiverValue ->
+                onImplicitReceiver(implicitReceiverValue, parentGroup.Implicit(depth))
+            }
+        }
+    }
+
     /**
      * @return true if level is empty
      */
@@ -92,10 +128,17 @@ internal abstract class FirBaseTowerResolveTask(
 
 internal open class FirTowerResolveTask(
     resolverSession: FirTowerResolverSession,
+    towerDataElementsForName: TowerDataElementsForName,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     stubReceiverCandidateFactory: CandidateFactory? = null
-) : FirBaseTowerResolveTask(resolverSession, collector, candidateFactory, stubReceiverCandidateFactory) {
+) : FirBaseTowerResolveTask(
+    resolverSession,
+    towerDataElementsForName,
+    collector,
+    candidateFactory,
+    stubReceiverCandidateFactory
+) {
 
     suspend fun runResolverForQualifierReceiver(
         info: CallInfo,
@@ -177,7 +220,7 @@ internal open class FirTowerResolveTask(
             return
         }
 
-        resolverSession.enumerateTowerLevels(
+        enumerateTowerLevels(
             parentGroup = parentGroup,
             onScope = { scope, group ->
                 processScopeForExplicitReceiver(
@@ -201,14 +244,17 @@ internal open class FirTowerResolveTask(
         val emptyScopes = mutableSetOf<FirScope>()
         val implicitReceiverValuesWithEmptyScopes = mutableSetOf<ImplicitReceiverValue<*>>()
 
-        resolverSession.enumerateTowerLevels(
+        enumerateTowerLevels(
             onScope = l@{ scope, group ->
                 // NB: this check does not work for variables
                 // because we do not search for objects if we have extension receiver
                 if (info.callKind != CallKind.VariableAccess && scope in emptyScopes) return@l
 
                 processLevel(
-                    scope.toScopeTowerLevel(), info, group
+                    scope.toScopeTowerLevel(), info, group,
+                    onEmptyLevel = {
+                        emptyScopes += scope
+                    }
                 )
             },
             onImplicitReceiver = { receiver, group ->
@@ -258,7 +304,8 @@ internal open class FirTowerResolveTask(
                     ExplicitReceiverKind.EXTENSION_RECEIVER, parentGroup
                 )
             } else {
-                for ((implicitReceiverValue, depth) in resolverSession.implicitReceivers) {
+                for ((depth, towerDataElement) in towerDataElementsForName.nonLocalTowerDataElements.withIndex()) {
+                    val implicitReceiverValue = towerDataElement.implicitReceiver ?: continue
                     processHideMembersLevel(
                         implicitReceiverValue, topLevelScope, info, index, depth,
                         ExplicitReceiverKind.NO_EXPLICIT_RECEIVER, parentGroup
@@ -308,7 +355,7 @@ internal open class FirTowerResolveTask(
             }
         )
 
-        resolverSession.enumerateTowerLevels(
+        enumerateTowerLevels(
             parentGroup,
             onScope = l@{ scope, group ->
                 if (scope in emptyScopes) return@l

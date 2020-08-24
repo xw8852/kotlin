@@ -73,9 +73,13 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
     ) {
         val invokeReceiverVariableInfo = originalCallInfo.replaceWithVariableAccess()
         val invokeReceiverVariableWithNoReceiverInfo = invokeReceiverVariableInfo.replaceExplicitReceiver(null)
+
+        val towerDataElementsForName = TowerDataElementsForName(invokeReceiverVariableInfo.name, components.towerDataContext)
+
         enqueueInvokeReceiverTask(
             originalCallInfo,
             invokeReceiverVariableInfo,
+            towerDataElementsForName = towerDataElementsForName,
             invokeBuiltinExtensionMode = false
         ) {
             invokeAction(it, invokeReceiverVariableInfo)
@@ -83,6 +87,7 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
         enqueueInvokeReceiverTask(
             originalCallInfo,
             invokeReceiverVariableWithNoReceiverInfo,
+            towerDataElementsForName = towerDataElementsForName,
             invokeBuiltinExtensionMode = true
         ) {
             invokeExtensionAction(it, invokeReceiverVariableWithNoReceiverInfo)
@@ -92,12 +97,14 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
     private inline fun enqueueInvokeReceiverTask(
         info: CallInfo,
         invokeReceiverInfo: CallInfo,
+        towerDataElementsForName: TowerDataElementsForName = TowerDataElementsForName(invokeReceiverInfo.name, components.towerDataContext),
         invokeBuiltinExtensionMode: Boolean,
         crossinline task: suspend (FirTowerResolveTask) -> Unit
     ) {
         val collector = CandidateCollector(components, components.resolutionStageRunner)
         val invokeReceiverProcessor = InvokeReceiverResolveTask(
             resolverSession,
+            towerDataElementsForName,
             collector,
             CandidateFactory(components, invokeReceiverInfo),
             onSuccessfulLevel = { towerGroup ->
@@ -176,6 +183,7 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
         val invokeOnGivenReceiverCandidateFactory = CandidateFactory(components, invokeFunctionInfo)
         val task = InvokeFunctionResolveTask(
             resolverSession,
+            TowerDataElementsForName(invokeFunctionInfo.name, components.towerDataContext),
             receiverGroup,
             resolverSession.candidateFactoriesAndCollectors.resultCollector,
             invokeOnGivenReceiverCandidateFactory,
@@ -256,10 +264,17 @@ private fun BodyResolveComponents.createExplicitReceiverForInvokeByCallable(
 
 private class InvokeReceiverResolveTask(
     resolverSession: FirTowerResolverSession,
+    towerDataElementsForName: TowerDataElementsForName,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     private val onSuccessfulLevel: (TowerGroup) -> Unit
-) : FirTowerResolveTask(resolverSession, collector, candidateFactory, stubReceiverCandidateFactory = null) {
+) : FirTowerResolveTask(
+    resolverSession,
+    towerDataElementsForName,
+    collector,
+    candidateFactory,
+    stubReceiverCandidateFactory = null
+) {
     override fun interceptTowerGroup(towerGroup: TowerGroup): TowerGroup =
         towerGroup.InvokeResolvePriority(InvokeResolvePriority.INVOKE_RECEIVER)
 
@@ -270,11 +285,18 @@ private class InvokeReceiverResolveTask(
 
 private class InvokeFunctionResolveTask(
     resolverSession: FirTowerResolverSession,
+    towerDataElementsForName: TowerDataElementsForName,
     private val receiverGroup: TowerGroup,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     stubReceiverCandidateFactory: CandidateFactory? = null
-) : FirBaseTowerResolveTask(resolverSession, collector, candidateFactory, stubReceiverCandidateFactory) {
+) : FirBaseTowerResolveTask(
+    resolverSession,
+    towerDataElementsForName,
+    collector,
+    candidateFactory,
+    stubReceiverCandidateFactory
+) {
 
     override fun interceptTowerGroup(towerGroup: TowerGroup): TowerGroup =
         maxOf(towerGroup.InvokeResolvePriority(InvokeResolvePriority.COMMON_INVOKE), receiverGroup)
@@ -290,7 +312,7 @@ private class InvokeFunctionResolveTask(
             ExplicitReceiverKind.DISPATCH_RECEIVER
         )
 
-        resolverSession.enumerateTowerLevels(
+        enumerateTowerLevels(
             onScope = { scope, group ->
                 processLevelForRegularInvoke(
                     scope.toScopeTowerLevel(extensionReceiver = invokeReceiverValue),
@@ -328,7 +350,8 @@ private class InvokeFunctionResolveTask(
         invokeReceiverValue: ExpressionReceiverValue,
         parentGroupForInvokeCandidates: TowerGroup
     ) {
-        for ((implicitReceiverValue, depth) in resolverSession.implicitReceivers) {
+        for ((depth, towerDataElement) in towerDataElementsForName.nonLocalTowerDataElements.withIndex()) {
+            val implicitReceiverValue = towerDataElement.implicitReceiver ?: continue
             val towerGroup =
                 parentGroupForInvokeCandidates
                     .Implicit(depth)
