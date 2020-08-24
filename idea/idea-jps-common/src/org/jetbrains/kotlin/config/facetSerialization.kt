@@ -127,7 +127,7 @@ fun Element.getFacetPlatformByConfigurationElement(): TargetPlatform {
     }.orDefault() // finally, fallback to the default platform
 }
 
-private fun readV2AndLaterConfig(element: Element): KotlinFacetSettings {
+private fun readV4Config(element: Element): KotlinFacetSettings {
     return KotlinFacetSettings().apply {
         element.getAttributeValue("useProjectSettings")?.let { useProjectSettings = it.toBoolean() }
         val targetPlatform = element.getFacetPlatformByConfigurationElement()
@@ -167,20 +167,25 @@ private fun readV2AndLaterConfig(element: Element): KotlinFacetSettings {
             compilerSettings = CompilerSettings()
             XmlSerializer.deserializeInto(compilerSettings!!, it)
         }
-        element.getChild("compilerArguments")?.let {
-            compilerArguments = targetPlatform.createArguments {
-                freeArgs = mutableListOf()
-                internalArguments = mutableListOf()
-            }
-            XmlSerializer.deserializeInto(compilerArguments!!, it)
-            compilerArguments!!.detectVersionAutoAdvance()
-        }
         productionOutputPath = element.getChild("productionOutputPath")?.let {
             PathUtil.toSystemDependentName((it.content.firstOrNull() as? Text)?.textTrim)
         } ?: (compilerArguments as? K2JSCompilerArguments)?.outputFile
         testOutputPath = element.getChild("testOutputPath")?.let {
             PathUtil.toSystemDependentName((it.content.firstOrNull() as? Text)?.textTrim)
         } ?: (compilerArguments as? K2JSCompilerArguments)?.outputFile
+    }
+}
+
+private fun readV3Config(element: Element): KotlinFacetSettings {
+    return readV4Config(element).apply {
+        element.getChild("compilerArguments")?.let {
+            compilerArguments = targetPlatform?.createArguments {
+                freeArgs = mutableListOf()
+                internalArguments = mutableListOf()
+            }
+            XmlSerializer.deserializeInto(compilerArguments!!, it)
+            compilerArguments!!.detectVersionAutoAdvance()
+        }
     }
 }
 
@@ -197,7 +202,7 @@ private fun readElementsList(element: Element, rootElementName: String, elementN
 }
 
 private fun readV2Config(element: Element): KotlinFacetSettings {
-    return readV2AndLaterConfig(element).apply {
+    return readV3Config(element).apply {
         element.getChild("compilerArguments")?.children?.let { args ->
             when {
                 args.any { arg -> arg.attributes[0].value == "coroutinesEnable" && arg.attributes[1].booleanValue } ->
@@ -213,7 +218,7 @@ private fun readV2Config(element: Element): KotlinFacetSettings {
 }
 
 private fun readLatestConfig(element: Element): KotlinFacetSettings {
-    return readV2AndLaterConfig(element)
+    return readV4Config(element)
 }
 
 fun deserializeFacetSettings(element: Element): KotlinFacetSettings {
@@ -225,6 +230,7 @@ fun deserializeFacetSettings(element: Element): KotlinFacetSettings {
     return when (version) {
         1 -> readV1Config(element)
         2 -> readV2Config(element)
+        3 -> readV3Config(element)
         KotlinFacetSettings.CURRENT_VERSION -> readLatestConfig(element)
         else -> return KotlinFacetSettings() // Reset facet configuration if versions don't match
     }.apply { this.version = version }
@@ -339,7 +345,7 @@ private fun KotlinFacetSettings.writeLatestConfig(element: Element) {
         element.addContent(
             Element("externalSystemTestTasks").apply {
                 externalSystemRunTasks.forEach { task ->
-                    when(task) {
+                    when (task) {
                         is ExternalSystemTestRunTask -> {
                             addContent(
                                 Element("externalSystemTestTask").apply { addContent(task.toStringRepresentation()) }
@@ -371,11 +377,6 @@ private fun KotlinFacetSettings.writeLatestConfig(element: Element) {
     compilerSettings?.let { copyBean(it) }?.let {
         it.convertPathsToSystemIndependent()
         buildChildElement(element, "compilerSettings", it, filter)
-    }
-    compilerArguments?.let { copyBean(it) }?.let {
-        it.convertPathsToSystemIndependent()
-        val compilerArgumentsXml = buildChildElement(element, "compilerArguments", it, filter)
-        compilerArgumentsXml.dropVersionsIfNecessary(it)
     }
 }
 
@@ -410,9 +411,18 @@ fun Element.dropVersionsIfNecessary(settings: CommonCompilerArguments) {
     }
 }
 
+private fun KotlinFacetSettings.writeV3Config(element: Element) {
+    writeLatestConfig(element)
+    compilerArguments?.let { copyBean(it) }?.let {
+        it.convertPathsToSystemIndependent()
+        val compilerArgumentsXml = buildChildElement(element, "compilerArguments", it, SkipDefaultsSerializationFilter())
+        compilerArgumentsXml.dropVersionsIfNecessary(it)
+    }
+}
+
 // Special treatment of v2 may be dropped after transition to IDEA 172
 private fun KotlinFacetSettings.writeV2Config(element: Element) {
-    writeLatestConfig(element)
+    writeV3Config(element)
     element.getChild("compilerArguments")?.let {
         it.getOption("coroutinesState")?.detach()
         val coroutineOption = when (compilerArguments?.coroutinesState) {
@@ -432,12 +442,15 @@ private fun KotlinFacetSettings.writeV2Config(element: Element) {
 }
 
 fun KotlinFacetSettings.serializeFacetSettings(element: Element) {
-    val versionToWrite = if (version == 2) version else KotlinFacetSettings.CURRENT_VERSION
+    val versionToWrite = when (version) {
+        2, 3 -> version
+        else -> KotlinFacetSettings.CURRENT_VERSION
+    }
     element.setAttribute("version", versionToWrite.toString())
-    if (versionToWrite == 2) {
-        writeV2Config(element)
-    } else {
-        writeLatestConfig(element)
+    when (versionToWrite) {
+        2 -> writeV2Config(element)
+        3 -> writeV3Config(element)
+        else -> writeLatestConfig(element)
     }
 }
 
