@@ -100,7 +100,7 @@ class FunctionGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
 
     fun generatePropertyAccessor(
         descriptor: PropertyAccessorDescriptor,
-        ktProperty: KtProperty,
+        ktProperty: KtVariableDeclaration,
         ktAccessor: KtPropertyAccessor?
     ): IrSimpleFunction =
         declareSimpleFunctionInner(

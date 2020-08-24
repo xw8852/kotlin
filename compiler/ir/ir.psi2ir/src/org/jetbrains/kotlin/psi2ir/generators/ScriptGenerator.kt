@@ -93,11 +93,16 @@ class ScriptGenerator(declarationGenerator: DeclarationGenerator) : DeclarationG
                                 ktEntry.startOffsetSkippingComments, ktEntry.endOffset, componentSubstitutedCall,
                                 IrStatementOrigin.COMPONENT_N.withIndex(index + 1)
                             )
+                            val irProperty =
+                                PropertyGenerator(declarationGenerator).generateDestructuringDeclarationEntryAsPropertyDeclaration(
+                                    ktEntry, irComponentCall
+                                )
                             val irComponentVar = context.symbolTable.declareVariable(
                                 ktEntry.startOffsetSkippingComments, ktEntry.endOffset, IrDeclarationOrigin.DEFINED,
                                 componentVariable, componentVariable.type.toIrType(), irComponentCall
                             )
-                            irScript.declarations.add(irComponentVar)
+//                            irScript.declarations.add(irComponentVar)
+                            irScript.declarations.add(irProperty)
                         }
                         irScript.statements += irBlock
                     }
