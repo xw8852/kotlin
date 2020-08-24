@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.util.containers.SLRUMap
+import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.caches.project.SdkInfo
 import org.jetbrains.kotlin.idea.caches.project.getScriptRelatedModuleInfo
@@ -264,7 +265,8 @@ fun loadDefinitionsFromTemplates(
      * Script template dependencies naturally become (part of) dependencies of the script which is not always desired for resolver dependencies.
      * i.e. gradle resolver may depend on some jars that 'built.gradle.kts' files should not depend on.
      */
-    additionalResolverClasspath: List<File> = emptyList()
+    additionalResolverClasspath: List<File> = emptyList(),
+    providedLanguageVersion: LanguageVersion? = null
 ): List<ScriptDefinition> {
     val classpath = templateClasspath + additionalResolverClasspath
     scriptingInfoLog("Loading script definitions $templateClassNames using cp: ${classpath.joinToString(File.pathSeparator)}")
@@ -281,10 +283,10 @@ fun loadDefinitionsFromTemplates(
             }
             when {
                 template.annotations.firstIsInstanceOrNull<kotlin.script.templates.ScriptTemplateDefinition>() != null -> {
-                    ScriptDefinition.FromLegacyTemplate(hostConfiguration, template, templateClasspath)
+                    ScriptDefinition.FromLegacyTemplate(hostConfiguration, template, templateClasspath, providedLanguageVersion)
                 }
                 template.annotations.firstIsInstanceOrNull<kotlin.script.experimental.annotations.KotlinScript>() != null -> {
-                    ScriptDefinition.FromTemplate(hostConfiguration, template, ScriptDefinition::class)
+                    ScriptDefinition.FromTemplate(hostConfiguration, template, ScriptDefinition::class, providedLanguageVersion)
                 }
                 else -> {
                     scriptingWarnLog("Cannot find a valid script definition annotation on the class $template")

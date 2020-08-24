@@ -115,16 +115,24 @@ fun Module.getStableName(): Name {
 
 @JvmOverloads
 fun Project.getLanguageVersionSettings(
+    providedLanguageVersion: LanguageVersion? = null,
+    providedApiVersion: ApiVersion? = null,
     contextModule: Module? = null,
     jsr305State: Jsr305State? = null,
     isReleaseCoroutines: Boolean? = null
 ): LanguageVersionSettings {
-    val arguments = KotlinCommonCompilerArgumentsHolder.getInstance(this).settings
+
+    val kotlinFacetSettings = contextModule?.let {
+        KotlinFacetSettingsProvider.getInstance(this)?.getInitializedSettings(it)
+    }
+
+    val arguments = kotlinFacetSettings?.compilerArguments ?: KotlinCommonCompilerArgumentsHolder.getInstance(this).settings
     val languageVersion =
-        LanguageVersion.fromVersionString(arguments.languageVersion)
-            ?: contextModule?.getAndCacheLanguageLevelByDependencies()
-            ?: VersionView.RELEASED_VERSION
-    val apiVersion = ApiVersion.createByLanguageVersion(LanguageVersion.fromVersionString(arguments.apiVersion) ?: languageVersion)
+        providedLanguageVersion ?: kotlinFacetSettings?.languageLevel ?: LanguageVersion.fromVersionString(arguments.languageVersion)
+        ?: contextModule?.getAndCacheLanguageLevelByDependencies()
+        ?: VersionView.RELEASED_VERSION
+    val apiVersion =
+        providedApiVersion ?: ApiVersion.createByLanguageVersion(LanguageVersion.fromVersionString(arguments.apiVersion) ?: languageVersion)
     val compilerSettings = KotlinCompilerSettings.getInstance(this).settings
 
     val additionalArguments: CommonCompilerArguments = parseArguments(

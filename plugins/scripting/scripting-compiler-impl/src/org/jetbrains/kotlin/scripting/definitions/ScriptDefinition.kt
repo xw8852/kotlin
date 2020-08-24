@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.scripting.definitions
 
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.util.io.FileUtilRt
+import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.scripting.resolve.KotlinScriptDefinitionFromAnnotatedTemplate
 import java.io.File
 import kotlin.reflect.KClass
@@ -30,6 +31,7 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     abstract val fileExtension: String
     abstract val name: String
     open val defaultClassName: String = "Script"
+
     // TODO: used in settings, find out the reason and refactor accordingly
     abstract val definitionId: String
 
@@ -38,6 +40,9 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     // Target platform for script, ex. "JVM", "JS", "NATIVE"
     open val platform: String
         get() = "JVM"
+
+    open val languageVersion: LanguageVersion?
+        get() = null
 
     open val isDefault = false
 
@@ -61,7 +66,8 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")
     open class FromLegacy(
         override val hostConfiguration: ScriptingHostConfiguration,
-        override val legacyDefinition: KotlinScriptDefinition
+        override val legacyDefinition: KotlinScriptDefinition,
+        override val languageVersion: LanguageVersion? = null
     ) : ScriptDefinition() {
 
         override val compilationConfiguration: ScriptCompilationConfiguration by lazy {
@@ -109,17 +115,19 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromLegacyTemplate(
         hostConfiguration: ScriptingHostConfiguration,
         template: KClass<*>,
-        templateClasspath: List<File> = emptyList()
+        templateClasspath: List<File> = emptyList(),
+        languageVersion: LanguageVersion? = null
     ) : FromLegacy(
         hostConfiguration,
         KotlinScriptDefinitionFromAnnotatedTemplate(
             template,
             hostConfiguration[ScriptingHostConfiguration.getEnvironment]?.invoke(),
             templateClasspath
-        )
+        ),
+        languageVersion
     )
 
-    abstract class FromConfigurationsBase : ScriptDefinition() {
+    abstract class FromConfigurationsBase() : ScriptDefinition() {
 
         @Suppress("OverridingDeprecatedMember", "DEPRECATION")
         override val legacyDefinition by lazy {
@@ -180,12 +188,14 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromConfigurations(
         override val hostConfiguration: ScriptingHostConfiguration,
         override val compilationConfiguration: ScriptCompilationConfiguration,
-        override val evaluationConfiguration: ScriptEvaluationConfiguration?
+        override val evaluationConfiguration: ScriptEvaluationConfiguration?,
+        override val languageVersion: LanguageVersion? = null
     ) : FromConfigurationsBase()
 
     open class FromNewDefinition(
         private val baseHostConfiguration: ScriptingHostConfiguration,
-        private val definition: kotlin.script.experimental.host.ScriptDefinition
+        private val definition: kotlin.script.experimental.host.ScriptDefinition,
+        override val languageVersion: LanguageVersion? = null
     ) : FromConfigurationsBase() {
         override val hostConfiguration: ScriptingHostConfiguration
             get() = definition.compilationConfiguration[ScriptCompilationConfiguration.hostConfiguration] ?: baseHostConfiguration
@@ -197,10 +207,12 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromTemplate(
         baseHostConfiguration: ScriptingHostConfiguration,
         template: KClass<*>,
-        contextClass: KClass<*> = ScriptCompilationConfiguration::class
+        contextClass: KClass<*> = ScriptCompilationConfiguration::class,
+        languageVersion: LanguageVersion? = null
     ) : FromNewDefinition(
         baseHostConfiguration,
-        createScriptDefinitionFromTemplate(KotlinType(template), baseHostConfiguration, contextClass)
+        createScriptDefinitionFromTemplate(KotlinType(template), baseHostConfiguration, contextClass),
+        languageVersion
     )
 
     companion object {
