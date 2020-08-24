@@ -50,10 +50,7 @@ class PropertyGenerator(declarationGenerator: DeclarationGenerator) : Declaratio
             propertyDescriptor,
             isDelegated = false
         ).buildWithScope { irProperty ->
-            irProperty.backingField = generatePropertyBackingField(ktEntry, propertyDescriptor) { irField ->
-//                context.irFactory.createExpressionBody(entryInitializer)
-                null
-            }
+            irProperty.backingField = generatePropertyBackingField(ktEntry, propertyDescriptor) { null }
 
             irProperty.getter = generateGetterIfRequired(ktEntry, propertyDescriptor)
             irProperty.setter = generateSetterIfRequired(ktEntry, propertyDescriptor)
