@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.idea.search.usagesSearch
 
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.ide.highlighter.XmlFileType
+import com.intellij.ide.projectView.impl.ProjectRootsUtil
 import com.intellij.lang.java.JavaLanguage
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
@@ -27,33 +28,22 @@ import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.diagnostics.PsiDiagnosticUtils
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.hasType
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isInProjectSource
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isSamInterface
 import org.jetbrains.kotlin.idea.refactoring.fqName.getKotlinFqName
 import org.jetbrains.kotlin.idea.references.KtDestructuringDeclarationReference
 import org.jetbrains.kotlin.idea.search.excludeFileTypes
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
 import org.jetbrains.kotlin.idea.search.restrictToKotlinSources
-import org.jetbrains.kotlin.idea.util.ProjectRootsUtil
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.kdoc.psi.impl.KDocName
-import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
-import org.jetbrains.kotlin.resolve.sam.getSingleAbstractMethodOrNull
 import java.util.*
 
 //TODO: check if smart search is too expensive
-
-private fun isSamInterface(psiClass: PsiClass): Boolean {
-    val classDescriptor = psiClass.getJavaMemberDescriptor() as? JavaClassDescriptor
-    return classDescriptor != null && getSingleAbstractMethodOrNull(classDescriptor) != null
-}
-
-private fun hasType(element: PsiElement): Boolean {
-    val bindingContext = element.analyze(BodyResolveMode.PARTIAL)
-    return bindingContext.getType(element) != null
-}
-
 
 class ExpressionsOfTypeProcessor(
     private val containsTypeOrDerivedInside: (KtDeclaration) -> Boolean,
@@ -136,7 +126,7 @@ class ExpressionsOfTypeProcessor(
             }) return
 
         // for class from library always use plain search because we cannot search usages in compiled code (we could though)
-        if (!runReadAction { classToSearch.isValid && ProjectRootsUtil.isInProjectSource(classToSearch) }) {
+        if (!runReadAction { classToSearch.isValid && isInProjectSource(classToSearch) }) {
             possibleMatchesInScopeHandler(searchScope)
             return
         }
@@ -539,8 +529,7 @@ class ExpressionsOfTypeProcessor(
 
                 if (element.getStrictParentOfType<KtImportDirective>() != null) return true // ignore usage in import
 
-                val hasType = hasType(element)
-                if (hasType) { // access to object or companion object
+                if (element.hasType) { // access to object or companion object
                     processSuspiciousExpression(element)
                     return true
                 }
@@ -765,7 +754,7 @@ class ExpressionsOfTypeProcessor(
             if (psiClass != null) {
                 testLog { "Resolved java class to descriptor: ${psiClass.qualifiedName}" }
 
-                if (isSamInterface(psiClass)) {
+                if (psiClass.isSamInterface) {
                     addSamInterfaceToProcess(psiClass)
                     return true
                 }

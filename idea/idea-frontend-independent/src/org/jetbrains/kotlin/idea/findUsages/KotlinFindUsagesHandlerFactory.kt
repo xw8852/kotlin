@@ -30,12 +30,12 @@ import com.intellij.psi.search.searches.OverridingMethodsSearch
 import org.jetbrains.kotlin.asJava.toLightMethods
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.idea.KotlinBundle
-import org.jetbrains.kotlin.idea.core.isOverridable
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.checkSuperMethods
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isOverridable
 import org.jetbrains.kotlin.idea.findUsages.handlers.DelegatingFindMemberUsagesHandler
 import org.jetbrains.kotlin.idea.findUsages.handlers.KotlinFindClassUsagesHandler
 import org.jetbrains.kotlin.idea.findUsages.handlers.KotlinFindMemberUsagesHandler
 import org.jetbrains.kotlin.idea.findUsages.handlers.KotlinTypeParameterFindUsagesHandler
-import org.jetbrains.kotlin.idea.refactoring.checkSuperMethods
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getQualifiedElementSelector

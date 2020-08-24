@@ -34,24 +34,40 @@ import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToParameterDescriptorIfAny
 import org.jetbrains.kotlin.idea.caches.resolve.util.getJavaMethodDescriptor
 import org.jetbrains.kotlin.idea.references.unwrappedTargets
+import org.jetbrains.kotlin.idea.search.ReceiverTypeSearcherInfo
 import org.jetbrains.kotlin.idea.search.declarationsSearch.HierarchySearchRequest
 import org.jetbrains.kotlin.idea.search.declarationsSearch.searchInheritors
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.util.FuzzyType
 import org.jetbrains.kotlin.idea.util.application.runReadAction
+import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.contains
 import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType
+import org.jetbrains.kotlin.renderer.DescriptorRenderer
 import org.jetbrains.kotlin.resolve.*
 import org.jetbrains.kotlin.resolve.descriptorUtil.isExtension
 import org.jetbrains.kotlin.resolve.descriptorUtil.isTypeRefinementEnabled
 import org.jetbrains.kotlin.resolve.descriptorUtil.module
 import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
-import org.jetbrains.kotlin.resolve.scopes.receivers.ImplicitClassReceiver
+import org.jetbrains.kotlin.resolve.sam.getSingleAbstractMethodOrNull
+import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.util.isValidOperator
-import java.util.HashSet
+
+fun tryRenderDeclarationCompactStyle(declaration: KtDeclaration): String? =
+    declaration.descriptor?.let { DescriptorRenderer.COMPACT.render(it) }
+
+fun isSamInterface(psiClass: PsiClass): Boolean {
+    val classDescriptor = psiClass.getJavaMemberDescriptor() as? JavaClassDescriptor
+    return classDescriptor != null && getSingleAbstractMethodOrNull(classDescriptor) != null
+}
+
+fun hasType(element: PsiElement): Boolean {
+    val bindingContext = element.analyze(BodyResolveMode.PARTIAL)
+    return bindingContext.getType(element) != null
+}
 
 val KtDeclaration.descriptor: DeclarationDescriptor?
     get() = if (this is KtParameter) this.descriptor else this.resolveToDescriptorIfAny(BodyResolveMode.FULL)
@@ -84,9 +100,6 @@ fun PsiReference.checkUsageVsOriginalDescriptor(
             usageDescriptor != null && checker(usageDescriptor, targetDescriptor)
         }
 }
-
-fun PsiReference.isImportUsage(): Boolean =
-    element.getNonStrictParentOfType<KtImportDirective>() != null
 
 fun PsiReference.isConstructorUsage(ktClassOrObject: KtClassOrObject): Boolean = with(element) {
     fun checkJavaUsage(): Boolean {
@@ -314,8 +327,6 @@ fun <T : PsiNamedElement> List<T>.filterDataClassComponentsIfDisabled(kotlinOpti
     return filter { !it.isComponentElement() }
 }
 
-inline fun <T> Boolean.ifTrue(body: () -> T?): T? = if (this) body() else null
-
 fun KtFile.forceResolveReferences(elements: List<KtElement>) {
     (element.containingFile as KtFile).getResolutionFacade().analyze(elements, BodyResolveMode.PARTIAL)
 }
@@ -366,11 +377,6 @@ private fun PsiElement.extractReceiverType(isDestructionDeclarationSearch: Boole
     }
 }
 
-data class ReceiverTypeSearcherInfo(
-    val psiClass: PsiClass?,
-    val containsTypeOrDerivedInside: ((KtDeclaration) -> Boolean)
-)
-
 fun PsiElement.getReceiverTypeSearcherInfo(isDestructionDeclarationSearch: Boolean): ReceiverTypeSearcherInfo? {
     val receiverType = runReadAction { extractReceiverType(isDestructionDeclarationSearch) } ?: return null
     val psiClass = runReadAction { receiverType.toPsiClass() }
@@ -386,3 +392,5 @@ fun KtFile.getDefaultImports(): List<ImportPath> {
         includeLowPriorityImports = true
     )
 }
+
+fun PsiFile.scriptDefinitionExists(): Boolean = findScriptDefinition() != null

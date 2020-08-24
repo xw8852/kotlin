@@ -32,14 +32,14 @@ import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.idea.findUsages.KotlinClassFindUsagesOptions
 import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactory
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.isCallReceiverRefersToCompanionObject
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.isConstructorUsage
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindClassUsagesDialog
 import org.jetbrains.kotlin.idea.search.declarationsSearch.HierarchySearchRequest
 import org.jetbrains.kotlin.idea.search.declarationsSearch.searchInheritors
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
-import org.jetbrains.kotlin.idea.search.usagesSearch.isCallReceiverRefersToCompanionObject
-import org.jetbrains.kotlin.idea.search.usagesSearch.isConstructorUsage
-import org.jetbrains.kotlin.idea.search.usagesSearch.isImportUsage
+import org.jetbrains.kotlin.idea.search.isImportUsage
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.anyDescendantOfType
@@ -159,8 +159,7 @@ class KotlinFindClassUsagesHandler(
             val klass = companionObject.getStrictParentOfType<KtClass>() ?: return true
             return !klass.anyDescendantOfType(fun(element: KtElement): Boolean {
                 if (element == companionObject) return false // skip companion object itself
-
-                return if (isCallReceiverRefersToCompanionObject(element, companionObject)) {
+                return if (element.isCallReceiverRefersToCompanionObject(companionObject)) {
                     element.references.any { !referenceProcessor.process(it) }
                 } else false
             })

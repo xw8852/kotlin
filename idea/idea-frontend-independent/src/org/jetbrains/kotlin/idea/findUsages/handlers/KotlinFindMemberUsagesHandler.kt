@@ -32,6 +32,9 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.asJava.toLightMethods
 import org.jetbrains.kotlin.idea.KotlinBundle
 import org.jetbrains.kotlin.idea.findUsages.*
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.getTopMostOverriddenElementsToHighlight
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.isDataClassComponentFunction
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.filterDataClassComponentsIfDisabled
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindFunctionUsagesDialog
 import org.jetbrains.kotlin.idea.findUsages.dialogs.KotlinFindPropertyUsagesDialog
 import org.jetbrains.kotlin.idea.search.declarationsSearch.HierarchySearchRequest
@@ -40,9 +43,8 @@ import org.jetbrains.kotlin.idea.search.excludeKotlinSources
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReadWriteAccessDetector
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
+import org.jetbrains.kotlin.idea.search.isImportUsage
 import org.jetbrains.kotlin.idea.search.isOnlyKotlinSearch
-import org.jetbrains.kotlin.idea.search.usagesSearch.filterDataClassComponentsIfDisabled
-import org.jetbrains.kotlin.idea.search.usagesSearch.isImportUsage
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.*
 import javax.swing.event.HyperlinkEvent
@@ -220,7 +222,7 @@ abstract class KotlinFindMemberUsagesHandler<T : KtNamedDeclaration> protected c
                 if (element is KtElement && !isOnlyKotlinSearch(options.searchScope)) {
                     // TODO: very bad code!! ReferencesSearch does not work correctly for constructors and annotation parameters
                     val psiMethodScopeSearch = when {
-                        element is KtParameter && element.dataClassComponentFunction() != null ->
+                        element is KtParameter && element.isDataClassComponentFunction ->
                             options.searchScope.excludeKotlinSources()
                         else -> options.searchScope
                     }

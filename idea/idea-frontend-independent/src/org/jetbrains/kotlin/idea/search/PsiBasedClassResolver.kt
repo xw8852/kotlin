@@ -16,15 +16,14 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.asJava.ImpreciseResolveResult
 import org.jetbrains.kotlin.asJava.ImpreciseResolveResult.*
 import org.jetbrains.kotlin.idea.caches.trackers.KotlinCodeBlockModificationListener
-import org.jetbrains.kotlin.idea.search.usagesSearch.getDefaultImports
-import org.jetbrains.kotlin.idea.stubindex.KotlinTypeAliasShortNameIndex
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.findTypeAliasByShortName
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.getDefaultImports
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.kotlin.psi.psiUtil.getParentOfTypeAndBranch
 import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
-import org.jetbrains.kotlin.resolve.ImportPath
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -122,7 +121,7 @@ class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName:
     }
 
     private fun findPotentialTypeAliasConflicts(target: PsiClass) {
-        val candidates = KotlinTypeAliasShortNameIndex.getInstance().get(targetShortName, target.project, target.project.allScope())
+        val candidates = findTypeAliasByShortName(targetShortName, target.project, target.project.allScope())
         for (candidate in candidates) {
             packagesWithTypeAliases.add(candidate.containingKtFile.packageFqName.asString())
         }

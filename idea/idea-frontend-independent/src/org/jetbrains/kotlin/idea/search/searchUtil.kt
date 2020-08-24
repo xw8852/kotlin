@@ -21,9 +21,7 @@ import com.intellij.openapi.fileTypes.FileTypeRegistry
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiFile
-import com.intellij.psi.PsiManager
+import com.intellij.psi.*
 import com.intellij.psi.impl.cache.impl.id.IdIndex
 import com.intellij.psi.impl.cache.impl.id.IdIndexEntry
 import com.intellij.psi.search.GlobalSearchScope
@@ -33,12 +31,17 @@ import com.intellij.psi.search.SearchScope
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.CommonProcessors
 import com.intellij.util.indexing.FileBasedIndex
+import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.idea.KotlinFileType
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.scriptDefinitionExists
 import org.jetbrains.kotlin.idea.util.application.runReadAction
+import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtFile
+import org.jetbrains.kotlin.psi.KtImportDirective
 import org.jetbrains.kotlin.psi.KtNamedDeclaration
-import org.jetbrains.kotlin.scripting.definitions.findScriptDefinition
+import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType
 import org.jetbrains.kotlin.types.expressions.OperatorConventions
 import java.util.*
 
@@ -141,6 +144,28 @@ fun findScriptsWithUsages(declaration: KtNamedDeclaration): List<KtFile> {
     }
     return collector.results
         .mapNotNull { PsiManager.getInstance(project).findFile(it) as? KtFile }
-        .filter { it.findScriptDefinition() != null }
+        .filter { it.scriptDefinitionExists() }
         .toList()
+}
+
+inline fun <T> Boolean.ifTrue(body: () -> T?): T? = if (this) body() else null
+
+data class ReceiverTypeSearcherInfo(
+    val psiClass: PsiClass?,
+    val containsTypeOrDerivedInside: ((KtDeclaration) -> Boolean)
+)
+
+fun PsiReference.isImportUsage(): Boolean =
+    element.getNonStrictParentOfType<KtImportDirective>() != null
+
+//TODO: Copied from fqNameUtil.kt
+fun PsiElement.getKotlinFqName(): FqName? = when (val element = namedUnwrappedElement) {
+    is PsiPackage -> FqName(element.qualifiedName)
+    is PsiClass -> element.qualifiedName?.let(::FqName)
+    is PsiMember -> element.getName()?.let { name ->
+        val prefix = element.containingClass?.qualifiedName
+        FqName(if (prefix != null) "$prefix.$name" else name)
+    }
+    is KtNamedDeclaration -> element.fqName
+    else -> null
 }

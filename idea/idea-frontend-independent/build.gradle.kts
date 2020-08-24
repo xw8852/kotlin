@@ -31,9 +31,6 @@ dependencies {
 sourceSets {
     "main" {
         projectDefault()
-        resources.srcDirs(
-            "resources-en"
-        )
     }
     "test" { projectDefault() }
 

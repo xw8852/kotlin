@@ -31,16 +31,13 @@ import org.jetbrains.kotlin.asJava.classes.KtLightClassForFacade
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.idea.KotlinBundle
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.refactoring.rename.RenameJavaSyntheticPropertyHandler
-import org.jetbrains.kotlin.idea.refactoring.rename.RenameKotlinPropertyProcessor
-import org.jetbrains.kotlin.idea.util.string.collapseSpaces
 import org.jetbrains.kotlin.name.FqNameUnsafe
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getStrictParentOfType
 
-class KotlinElementDescriptionProvider : ElementDescriptionProvider {
+open class KotlinElementDescriptionProviderBase : ElementDescriptionProvider {
     private tailrec fun KtNamedDeclaration.parentForFqName(): KtNamedDeclaration? {
         val parent = getStrictParentOfType<KtNamedDeclaration>() ?: return null
         if (parent is KtProperty && parent.isLocal) return parent.parentForFqName()
@@ -131,6 +128,10 @@ class KotlinElementDescriptionProvider : ElementDescriptionProvider {
         return builder.toString()
     }
 
+    //TODO: Implement in FIR
+    protected open val PsiElement.isRenameJavaSyntheticPropertyHandler get() = false
+    protected open val PsiElement.isRenameKotlinPropertyProcessor get() = false
+
     override fun getElementDescription(element: PsiElement, location: ElementDescriptionLocation): String? {
         val shouldUnwrap = location !is UsageViewShortNameLocation && location !is UsageViewLongNameLocation
         val targetElement = if (shouldUnwrap) element.unwrapped ?: element else element
@@ -164,10 +165,15 @@ class KotlinElementDescriptionProvider : ElementDescriptionProvider {
             is KtTypeAlias -> KotlinBundle.message("find.usages.type.alias")
             is KtLabeledExpression -> KotlinBundle.message("find.usages.label")
             is KtImportAlias -> KotlinBundle.message("find.usages.import.alias")
-            is RenameJavaSyntheticPropertyHandler.SyntheticPropertyWrapper -> KotlinBundle.message("find.usages.property")
             is KtLightClassForFacade -> KotlinBundle.message("find.usages.facade.class")
-            is RenameKotlinPropertyProcessor.PropertyMethodWrapper -> KotlinBundle.message("find.usages.property.accessor")
-            else -> null
+            else -> {
+                //TODO Implement in FIR
+                when {
+                    targetElement.isRenameJavaSyntheticPropertyHandler -> KotlinBundle.message("find.usages.property")
+                    targetElement.isRenameKotlinPropertyProcessor -> KotlinBundle.message("find.usages.property.accessor")
+                    else -> null
+                }
+            }
         }
 
         val namedElement = if (targetElement is KtPropertyAccessor) {

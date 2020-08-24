@@ -67,8 +67,11 @@ fun PsiNamedElement.getClassNameForCompanionObject(): String? {
     }
 }
 
-private fun KtParameter.dataClassComponentMethodName(): String? =
-    dataClassComponentFunction()?.name?.asString()
+private fun dataClassComponentMethodName(element: KtParameter): String? =
+    element.dataClassComponentFunction()?.name?.asString()
+
+private fun isDataClassComponentFunction(element: KtParameter): Boolean =
+    element.dataClassComponentFunction() != null
 
 fun KtParameter.dataClassComponentFunction(): FunctionDescriptor? {
     if (!isDataClassProperty()) return null

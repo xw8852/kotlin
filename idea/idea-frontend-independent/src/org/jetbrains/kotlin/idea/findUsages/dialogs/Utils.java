@@ -18,10 +18,8 @@ package org.jetbrains.kotlin.idea.findUsages.dialogs;
 
 import com.intellij.ui.SimpleColoredComponent;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.descriptors.DeclarationDescriptor;
-import org.jetbrains.kotlin.idea.search.usagesSearch.UtilsKt;
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport;
 import org.jetbrains.kotlin.psi.KtNamedDeclaration;
-import org.jetbrains.kotlin.renderer.DescriptorRenderer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -34,9 +32,9 @@ class Utils {
             @NotNull SimpleColoredComponent coloredComponent,
             @NotNull KtNamedDeclaration declaration
     ) {
-        DeclarationDescriptor descriptor = UtilsKt.getDescriptor(declaration);
-        if (descriptor != null) {
-            coloredComponent.append(DescriptorRenderer.COMPACT.render(descriptor));
+        String renderedDeclaration = KotlinFindUsagesSupport.Companion.tryRenderDeclarationCompactStyle(declaration);
+        if (renderedDeclaration != null) {
+            coloredComponent.append(renderedDeclaration);
         }
     }
 

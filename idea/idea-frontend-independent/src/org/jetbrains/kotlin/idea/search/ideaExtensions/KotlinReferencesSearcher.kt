@@ -33,18 +33,18 @@ import org.jetbrains.kotlin.asJava.elements.KtLightParameter
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
 import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.asJava.toLightElements
+import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.sourcesAndLibraries
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.dataClassComponentMethodName
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.expectedDeclarationIfAny
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.filterDataClassComponentsIfDisabled
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isExpectDeclaration
 import org.jetbrains.kotlin.idea.references.KtSimpleNameReference
 import org.jetbrains.kotlin.idea.references.mainReference
 import org.jetbrains.kotlin.idea.search.*
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions.Companion.Empty
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions.Companion.calculateEffectiveScope
-import org.jetbrains.kotlin.idea.search.usagesSearch.filterDataClassComponentsIfDisabled
-import org.jetbrains.kotlin.idea.search.usagesSearch.ifTrue
 import org.jetbrains.kotlin.idea.search.usagesSearch.operators.OperatorReferenceSearcher
-import org.jetbrains.kotlin.idea.stubindex.KotlinSourceFilterScope
 import org.jetbrains.kotlin.idea.util.application.runReadAction
-import org.jetbrains.kotlin.idea.util.expectedDeclarationIfAny
-import org.jetbrains.kotlin.idea.util.isExpectDeclaration
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import java.util.*
@@ -230,7 +230,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
             var namedArgsScope = function.useScope.intersectWith(queryParameters.scopeDeterminedByUser)
 
             if (namedArgsScope is GlobalSearchScope) {
-                namedArgsScope = KotlinSourceFilterScope.sourcesAndLibraries(namedArgsScope, project)
+                namedArgsScope = sourcesAndLibraries(namedArgsScope, project)
 
                 val filesWithFunctionName = CacheManager.SERVICE.getInstance(project).getVirtualFilesWithWord(
                     function.name!!, UsageSearchContext.IN_CODE, namedArgsScope, true
@@ -336,7 +336,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
         private fun searchForComponentConventions(element: PsiElement) {
             when (element) {
                 is KtParameter -> {
-                    val componentMethodName = element.dataClassComponentMethodName()
+                    val componentMethodName = element.dataClassComponentMethodName
                     if (componentMethodName != null) {
                         val containingClass = element.getStrictParentOfType<KtClassOrObject>()?.toLightClass()
                         searchDataClassComponentUsages(
@@ -348,7 +348,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                 }
 
                 is KtLightParameter -> {
-                    val componentMethodName = element.kotlinOrigin?.dataClassComponentMethodName()
+                    val componentMethodName = element.kotlinOrigin?.dataClassComponentMethodName
                     if (componentMethodName != null) {
                         searchDataClassComponentUsages(
                             containingClass = element.method.containingClass,

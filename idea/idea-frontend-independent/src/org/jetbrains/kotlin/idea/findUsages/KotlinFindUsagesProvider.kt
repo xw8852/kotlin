@@ -10,16 +10,12 @@ import com.intellij.lang.findUsages.FindUsagesProvider
 import com.intellij.lang.java.JavaFindUsagesProvider
 import com.intellij.psi.*
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
-import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.idea.KotlinBundle
-import org.jetbrains.kotlin.idea.caches.resolve.unsafeResolveToDescriptor
-import org.jetbrains.kotlin.idea.util.IdeDescriptorRenderers
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.isPropertyParameter
-import org.jetbrains.kotlin.types.typeUtil.isUnit
 
-class KotlinFindUsagesProvider : FindUsagesProvider {
+open class KotlinFindUsagesProviderBase : FindUsagesProvider {
     private val javaProvider by lazy { JavaFindUsagesProvider() }
 
     override fun canFindUsagesFor(psiElement: PsiElement): Boolean =
@@ -46,7 +42,7 @@ class KotlinFindUsagesProvider : FindUsagesProvider {
         }
     }
 
-    private val KtDeclaration.containerDescription: String?
+    protected val KtDeclaration.containerDescription: String?
         get() {
             containingClassOrObject?.let { return getDescriptiveName(it) }
             (parent as? KtFile)?.parent?.let { return getDescriptiveName(it) }
@@ -62,15 +58,8 @@ class KotlinFindUsagesProvider : FindUsagesProvider {
             }
             is KtProperty -> (element.name ?: "") + (element.containerDescription?.let { " of $it" } ?: "")
             is KtFunction -> {
-                val name = element.name ?: ""
-                val descriptor = element.unsafeResolveToDescriptor() as FunctionDescriptor
-                val renderer = IdeDescriptorRenderers.SOURCE_CODE_SHORT_NAMES_NO_ANNOTATIONS
-                val paramsDescription =
-                    descriptor.valueParameters.joinToString(prefix = "(", postfix = ")") { renderer.renderType(it.type) }
-                val returnType = descriptor.returnType
-                val returnTypeDescription = if (returnType != null && !returnType.isUnit()) renderer.renderType(returnType) else null
-                val funDescription = "$name$paramsDescription" + (returnTypeDescription?.let { ": $it" } ?: "")
-                return funDescription + (element.containerDescription?.let { " of $it" } ?: "")
+                //TODO: Correct FIR implementation
+                return element.name?.let { "$it(...)" } ?: ""
             }
             is KtLabeledExpression -> element.getLabelName() ?: ""
             is KtImportAlias -> element.name ?: ""

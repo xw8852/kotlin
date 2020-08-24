@@ -3,10 +3,10 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.jetbrains.kotlin.idea.util
+package org.jetbrains.kotlin.idea.findUsages
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.kotlin.psi.KtObjectDeclaration
 
-object ProjectRootsUtil {
-    fun isInProjectSource(element: PsiElement, includeScriptsOutsideSourceRoots: Boolean = false): Boolean = TODO()
+class KotlinFindUsagesSupportImpl : KotlinFindUsagesSupport {
 }

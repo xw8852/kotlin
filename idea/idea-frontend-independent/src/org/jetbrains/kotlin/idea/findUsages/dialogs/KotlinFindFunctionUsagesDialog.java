@@ -31,7 +31,7 @@ import org.jetbrains.kotlin.asJava.LightClassUtilsKt;
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod;
 import org.jetbrains.kotlin.idea.KotlinBundle;
 import org.jetbrains.kotlin.idea.findUsages.KotlinFunctionFindUsagesOptions;
-import org.jetbrains.kotlin.idea.refactoring.RenderingUtilsKt;
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport;
 import org.jetbrains.kotlin.psi.KtDeclaration;
 import org.jetbrains.kotlin.psi.KtNamedDeclaration;
 import org.jetbrains.kotlin.psi.psiUtil.PsiUtilsKt;
@@ -61,7 +61,7 @@ public class KotlinFindFunctionUsagesDialog extends FindMethodUsagesDialog {
 
     @Override
     public void configureLabelComponent(@NotNull SimpleColoredComponent coloredComponent) {
-        coloredComponent.append(RenderingUtilsKt.formatJavaOrLightMethod((PsiMethod) myPsiElement));
+        coloredComponent.append(KotlinSearchUsagesSupport.Companion.formatJavaOrLightMethod((PsiMethod) myPsiElement));
     }
 
     @Override
