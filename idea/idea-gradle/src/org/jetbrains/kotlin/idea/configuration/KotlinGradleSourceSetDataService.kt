@@ -319,7 +319,8 @@ fun configureFacetByCompilerArguments(
 ) {
     val compilerArgumentsCache = argumentCachesContainer.compilerArgumentsCache
     val classpathArgumentsCache = argumentCachesContainer.classpathArgumentsCache
-    val currentCompilerArguments = compilerArgumentsCache.selectCompilerArguments(argsInfo.currentArgumentsCacheIds)
+    val currentCompilerArguments = compilerArgumentsCache.selectCompilerArguments(argsInfo.currentArgumentsCacheIds) +
+            classpathArgumentsCache.selectCompilerArguments(argsInfo.classpathArgumentsCacheIds)
     val defaultCompilerArguments = compilerArgumentsCache.selectCompilerArguments(argsInfo.defaultArgumentsCacheIds)
     val dependencyClasspath =
         classpathArgumentsCache.selectCompilerArguments(argsInfo.dependencyClasspathCacheIds)

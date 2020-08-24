@@ -20,18 +20,21 @@ import kotlin.collections.ArrayList
 interface ArgsInfo : Serializable {
     val currentArgumentsCacheIds: List<CompilerArgumentCacheIdType>
     val defaultArgumentsCacheIds: List<CompilerArgumentCacheIdType>
+    val classpathArgumentsCacheIds: List<ClasspathArgumentCacheIdType>
     val dependencyClasspathCacheIds: List<ClasspathArgumentCacheIdType>
 }
 
 data class ArgsInfoImpl(
     override val currentArgumentsCacheIds: List<CompilerArgumentCacheIdType>,
     override val defaultArgumentsCacheIds: List<CompilerArgumentCacheIdType>,
+    override val classpathArgumentsCacheIds: List<ClasspathArgumentCacheIdType>,
     override val dependencyClasspathCacheIds: List<ClasspathArgumentCacheIdType>
 ) : ArgsInfo {
 
     constructor(argsInfo: ArgsInfo) : this(
         ArrayList(argsInfo.currentArgumentsCacheIds),
         ArrayList(argsInfo.defaultArgumentsCacheIds),
+        ArrayList(argsInfo.classpathArgumentsCacheIds),
         ArrayList(argsInfo.dependencyClasspathCacheIds)
     )
 }
@@ -178,13 +181,22 @@ class KotlinGradleModelBuilder : AbstractKotlinGradleModelBuilder() {
             if (compileTask.javaClass.name !in kotlinCompileTaskClasses) return@forEach
 
             val sourceSetName = compileTask.getSourceSetName()
-            val currentArguments = compileTask.getCompilerArguments("getSerializedCompilerArguments")
-                ?: compileTask.getCompilerArguments("getSerializedCompilerArgumentsIgnoreClasspathIssues") ?: emptyList()
+            val currentArguments = (compileTask.getCompilerArguments("getSerializedCompilerArguments")
+                ?: compileTask.getCompilerArguments("getSerializedCompilerArgumentsIgnoreClasspathIssues")
+                ?: emptyList())
+
+            val classpathArguments = currentArguments.flatMapIndexed { index: Int, s: String ->
+                if (s == "-classpath") listOf(index, index + 1) else emptyList()
+            }.map { currentArguments[it] }.toMutableList()
+
+            val preparedArguments = currentArguments.subtract(classpathArguments)
+
             val defaultArguments = compileTask.getCompilerArguments("getDefaultSerializedCompilerArguments").orEmpty()
             val dependencyClasspath = compileTask.getDependencyClasspath()
             compilerArgumentsBySourceSet[sourceSetName] = ArgsInfoImpl(
-                compilerArgumentsCache.cacheAllArguments(currentArguments),
+                compilerArgumentsCache.cacheAllArguments(preparedArguments),
                 compilerArgumentsCache.cacheAllArguments(defaultArguments),
+                classpathArgumentsCache.cacheAllArguments(classpathArguments),
                 classpathArgumentsCache.cacheAllArguments(dependencyClasspath)
             )
             extraProperties.acknowledgeTask(compileTask, null)
