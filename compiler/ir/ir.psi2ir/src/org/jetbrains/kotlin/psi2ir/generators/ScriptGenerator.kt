@@ -11,6 +11,8 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
 import org.jetbrains.kotlin.ir.expressions.impl.IrCompositeImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
+import org.jetbrains.kotlin.ir.expressions.impl.IrSetFieldImpl
 import org.jetbrains.kotlin.ir.util.varargElementType
 import org.jetbrains.kotlin.psi.KtDestructuringDeclaration
 import org.jetbrains.kotlin.psi.KtScript
@@ -78,6 +80,7 @@ class ScriptGenerator(declarationGenerator: DeclarationGenerator) : DeclarationG
                             statementGenerator.scope.createTemporaryVariableInBlock(context, initializerExpr, irBlock, "container")
 
                         val callGenerator = CallGenerator(statementGenerator)
+
                         for ((index, ktEntry) in d.entries.withIndex()) {
                             val componentResolvedCall = getOrFail(BindingContext.COMPONENT_RESOLVED_CALL, ktEntry)
 
@@ -93,16 +96,25 @@ class ScriptGenerator(declarationGenerator: DeclarationGenerator) : DeclarationG
                                 ktEntry.startOffsetSkippingComments, ktEntry.endOffset, componentSubstitutedCall,
                                 IrStatementOrigin.COMPONENT_N.withIndex(index + 1)
                             )
-                            val irProperty =
+
+                            val irComponentProperty =
                                 PropertyGenerator(declarationGenerator).generateDestructuringDeclarationEntryAsPropertyDeclaration(
                                     ktEntry, irComponentCall
                                 )
-                            val irComponentVar = context.symbolTable.declareVariable(
-                                ktEntry.startOffsetSkippingComments, ktEntry.endOffset, IrDeclarationOrigin.DEFINED,
-                                componentVariable, componentVariable.type.toIrType(), irComponentCall
-                            )
-//                            irScript.declarations.add(irComponentVar)
-                            irScript.declarations.add(irProperty)
+                            val irComponentBackingField = irComponentProperty.backingField!!
+
+                            irScript.declarations.add(irComponentProperty)
+
+                            val irComponentInitializer = IrSetFieldImpl(
+                                ktEntry.startOffsetSkippingComments, ktEntry.endOffset,
+                                irComponentBackingField.symbol,
+                                context.irBuiltIns.unitType,
+                                origin = null, superQualifierSymbol = null
+                            ).apply {
+                                value = irComponentCall
+                                receiver = IrGetValueImpl(ktEntry.startOffsetSkippingComments, ktEntry.endOffset, irScript.thisReceiver.symbol)
+                            }
+                            irBlock.statements.add(irComponentInitializer)
                         }
                         irScript.statements += irBlock
                     }
