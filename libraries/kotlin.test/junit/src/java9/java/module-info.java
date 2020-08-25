@@ -2,7 +2,7 @@ module kotlin.test.junit {
     requires transitive kotlin.stdlib;
     requires transitive kotlin.test;
 
-    requires junit;
+    requires transitive junit;
 
     exports kotlin.test.junit;
     exports kotlin.test.junit.annotations;
