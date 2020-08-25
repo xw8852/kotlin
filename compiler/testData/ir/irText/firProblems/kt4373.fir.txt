@@ -60,7 +60,7 @@ FILE fqName:<root> fileName:/kt4373.kt
   FUN name:box visibility:public modality:FINAL <> () returnType:kotlin.String
     BLOCK_BODY
       CALL 'public final fun eat (x: kotlin.Int): kotlin.Unit declared in <root>' type=kotlin.Unit origin=null
-        x: CALL 'public abstract fun <get-prop> (): kotlin.Int [fake_override] declared in <root>.A' type=kotlin.Int origin=GET_PROPERTY
+        x: CALL 'public open fun <get-prop> (): T of <root>.Tr declared in <root>.A' type=kotlin.Int origin=GET_PROPERTY
           $this: CONSTRUCTOR_CALL 'public constructor <init> (a: <root>.Tr<kotlin.Int>) [primary] declared in <root>.A' type=<root>.A origin=null
             a: BLOCK type=<root>.box.<no name provided> origin=OBJECT_LITERAL
               CLASS CLASS name:<no name provided> modality:FINAL visibility:local superTypes:[<root>.Tr<kotlin.Int>]

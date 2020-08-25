@@ -360,6 +360,10 @@ class Fir2IrDeclarationStorage(
         }
     }
 
+    internal fun cacheIrSimpleFunction(function: FirSimpleFunction, irFunction: IrSimpleFunction) {
+        functionCache[function] = irFunction
+    }
+
     internal fun declareIrSimpleFunction(
         signature: IdSignature?,
         containerSource: DeserializedContainerSource?,
@@ -724,12 +728,16 @@ class Fir2IrDeclarationStorage(
 
     fun getCachedIrProperty(property: FirProperty): IrProperty? = propertyCache[property]
 
+    internal fun cacheIrProperty(property: FirProperty, irProperty: IrProperty) {
+        propertyCache[property] = irProperty
+    }
+
     fun getCachedIrField(field: FirField): IrField? = fieldCache[field]
 
-    fun createIrFieldAndDelegatedMembers(field: FirField, parent: IrClass): IrField {
+    fun createIrFieldAndDelegatedMembers(field: FirField, owner: FirClass<*>, irClass: IrClass): IrField {
         val irField = createIrField(field, origin = IrDeclarationOrigin.DELEGATE)
-        irField.setAndModifyParent(parent)
-        delegatedMemberGenerator.generate(irField, parent)
+        irField.setAndModifyParent(irClass)
+        delegatedMemberGenerator.generate(irField, owner, irClass)
         return irField
     }
 
