@@ -192,7 +192,7 @@ open class FirJvmMangleComputer(
 
     private fun StringBuilder.mangleTypeParameterReference(typeParameter: FirTypeParameter) {
         val parent = typeParameter.effectiveParent()
-        val ci = typeParameterContainer.indexOf(parent)
+        val ci = typeParameterContainer.indexOf(parent).takeIf { it != -1 } ?: typeParameterContainer.size
         require(ci >= 0) {
             "No type container found for ${typeParameter.render()}"
         }
