@@ -112,19 +112,27 @@ private class ScriptToClassLowering(val context: JvmBackendContext) : FileLoweri
                     )
                 }
             }
+            irScript.statements.forEach { scriptStatement ->
+                val transformedStatement = scriptStatement.transformStatement(scriptTransformer)
+                irScriptClass.addAnonymousInitializer().also { irInitializer ->
+                    irInitializer.body =
+                        context.createIrBuilder(irInitializer.symbol).irBlockBody {
+                            if (transformedStatement is IrComposite) {
+                                for (statement in transformedStatement.statements)
+                                    +statement
+                            }
+                            else {
+                                +transformedStatement
+                            }
+                        }
+                }
+            }
             irScript.declarations.forEach {
                 if (it is IrVariable) {
                     irScriptClass.addSimplePropertyFrom(it)
                 } else {
                     val copy = it.transform(scriptTransformer, null) as IrDeclaration
                     irScriptClass.declarations.add(copy)
-                }
-            }
-            irScript.statements.forEach { scriptStatement ->
-                irScriptClass.addAnonymousInitializer().also { irInitializer ->
-                    irInitializer.body = context.createIrBuilder(irInitializer.symbol).irBlockBody {
-                        +scriptStatement.transformStatement(scriptTransformer)
-                    }
                 }
             }
             irScriptClass.annotations += irFile.annotations
