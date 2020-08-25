@@ -3,7 +3,7 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.jetbrains.kotlin.asJava
+package org.jetbrains.kotlin.idea.asJava
 
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
@@ -13,7 +13,7 @@ import com.intellij.psi.impl.light.LightMethod
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
 import org.jetbrains.kotlin.idea.KotlinLanguage
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport
 import org.jetbrains.kotlin.load.java.structure.LightClassOriginKind
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
@@ -42,6 +42,9 @@ interface LightClassProvider {
 
     fun getRepresentativeLightMethod(psiElement: PsiElement): PsiMethod?
 
+    fun isKtFakeLightClass(psiClass: PsiClass): Boolean
+
+    fun createKtFakeLightMethod(ktDeclaration: KtNamedDeclaration): PsiMethod?
 
     companion object {
 
@@ -75,16 +78,16 @@ interface LightClassProvider {
         fun KtElement.providedToLightElements(): List<PsiNamedElement> =
             getInstance(project).toLightElements(this)
 
-        fun providedCreateKtFakeLightClass(kotlinOrigin: KtClassOrObject): PsiClass =
+        fun providedCreateKtFakeLightClass(kotlinOrigin: KtClassOrObject): PsiClass? =
             getInstance(kotlinOrigin.project).createKtFakeLightClass(kotlinOrigin)
+
+        fun PsiClass.providedIsKtFakeLightClass(): Boolean =
+            getInstance(project).isKtFakeLightClass(this)
+
+        fun providedCreateKtFakeLightMethod(ktDeclaration: KtNamedDeclaration): PsiMethod? =
+            getInstance(ktDeclaration.project).createKtFakeLightMethod(ktDeclaration)
 
         fun PsiElement.providedGetRepresentativeLightMethod(): PsiMethod? =
             getInstance(project).getRepresentativeLightMethod(this)
     }
-}
-
-enum class ImpreciseResolveResult {
-    MATCH,
-    NO_MATCH,
-    UNSURE;
 }

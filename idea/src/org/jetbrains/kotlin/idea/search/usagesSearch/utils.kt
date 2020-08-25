@@ -26,13 +26,24 @@ import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.classes.lazyPub
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
+import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.asJava.toLightMethods
 import org.jetbrains.kotlin.asJava.unwrapped
 import org.jetbrains.kotlin.descriptors.*
+import org.jetbrains.kotlin.idea.caches.project.NotUnderContentRootModuleInfo.project
+import org.jetbrains.kotlin.idea.caches.project.getNullableModuleInfo
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
+import org.jetbrains.kotlin.idea.caches.resolve.getResolutionFacade
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToParameterDescriptorIfAny
+import org.jetbrains.kotlin.idea.caches.resolve.util.getJavaMemberDescriptor
 import org.jetbrains.kotlin.idea.caches.resolve.util.getJavaMethodDescriptor
+import org.jetbrains.kotlin.idea.caches.resolve.util.getJavaOrKotlinMemberDescriptor
+import org.jetbrains.kotlin.idea.caches.resolve.util.hasJavaResolutionFacade
+import org.jetbrains.kotlin.idea.codeInsight.DescriptorToSourceUtilsIde
+import org.jetbrains.kotlin.idea.compiler.IDELanguageSettingsProvider
+import org.jetbrains.kotlin.idea.project.TargetPlatformDetector
+import org.jetbrains.kotlin.idea.project.findAnalyzerServices
 import org.jetbrains.kotlin.idea.references.unwrappedTargets
 import org.jetbrains.kotlin.idea.search.ReceiverTypeSearcherInfo
 import org.jetbrains.kotlin.idea.search.declarationsSearch.HierarchySearchRequest
@@ -40,6 +51,8 @@ import org.jetbrains.kotlin.idea.search.declarationsSearch.searchInheritors
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.util.FuzzyType
 import org.jetbrains.kotlin.idea.util.application.runReadAction
+import org.jetbrains.kotlin.idea.util.fuzzyExtensionReceiverType
+import org.jetbrains.kotlin.idea.util.toFuzzyType
 import org.jetbrains.kotlin.load.java.descriptors.JavaClassDescriptor
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.psi.*
@@ -64,13 +77,8 @@ fun isSamInterface(psiClass: PsiClass): Boolean {
     return classDescriptor != null && getSingleAbstractMethodOrNull(classDescriptor) != null
 }
 
-fun hasType(element: PsiElement): Boolean {
-    val bindingContext = element.analyze(BodyResolveMode.PARTIAL)
-    return bindingContext.getType(element) != null
-}
-
-val KtDeclaration.descriptor: DeclarationDescriptor?
-    get() = if (this is KtParameter) this.descriptor else this.resolveToDescriptorIfAny(BodyResolveMode.FULL)
+fun hasType(element: KtExpression): Boolean =
+    element.analyze(BodyResolveMode.PARTIAL).getType(element) != null
 
 val KtDeclaration.constructor: ConstructorDescriptor?
     get() {
@@ -81,9 +89,6 @@ val KtDeclaration.constructor: ConstructorDescriptor?
             else -> null
         }
     }
-
-val KtParameter.descriptor: ValueParameterDescriptor?
-    get() = this.resolveToParameterDescriptorIfAny(BodyResolveMode.FULL)
 
 val KtParameter.propertyDescriptor: PropertyDescriptor?
     get() = this.resolveToDescriptorIfAny(BodyResolveMode.FULL) as? PropertyDescriptor
@@ -328,12 +333,12 @@ fun <T : PsiNamedElement> List<T>.filterDataClassComponentsIfDisabled(kotlinOpti
 }
 
 fun KtFile.forceResolveReferences(elements: List<KtElement>) {
-    (element.containingFile as KtFile).getResolutionFacade().analyze(elements, BodyResolveMode.PARTIAL)
+    getResolutionFacade().analyze(elements, BodyResolveMode.PARTIAL)
 }
 
 private fun PsiElement.resolveTargetToDescriptor(isDestructionDeclarationSearch: Boolean): FunctionDescriptor? {
 
-    if (isDestructionDeclarationSearch && targetDeclaration is KtParameter) {
+    if (isDestructionDeclarationSearch && this is KtParameter) {
         return dataClassComponentFunction()
     }
 
@@ -358,6 +363,7 @@ private fun containsTypeOrDerivedInside(declaration: KtDeclaration, typeToSearch
 
 private fun FuzzyType.toPsiClass(): PsiClass? {
     val classDescriptor = type.constructor.declarationDescriptor ?: return null
+    val project = project ?: return null
     val classDeclaration = DescriptorToSourceUtilsIde.getAnyDeclaration(project, classDescriptor)
     return when (classDeclaration) {
         is PsiClass -> classDeclaration

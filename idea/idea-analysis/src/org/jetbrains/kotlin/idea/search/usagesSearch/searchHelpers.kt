@@ -22,6 +22,8 @@ import org.jetbrains.kotlin.asJava.LightClassUtil
 import org.jetbrains.kotlin.asJava.LightClassUtil.PropertyAccessorsPsiMethods
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.idea.caches.resolve.analyze
+import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
+import org.jetbrains.kotlin.idea.caches.resolve.resolveToParameterDescriptorIfAny
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
@@ -29,7 +31,9 @@ import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType
 import org.jetbrains.kotlin.resolve.BindingContext
 import org.jetbrains.kotlin.resolve.DataClassDescriptorResolver
+import org.jetbrains.kotlin.resolve.calls.callUtil.getResolvedCall
 import org.jetbrains.kotlin.resolve.findOriginalTopMostOverriddenDescriptors
+import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
 import org.jetbrains.kotlin.resolve.scopes.receivers.ImplicitClassReceiver
 import org.jetbrains.kotlin.resolve.source.getPsi
 import java.util.*
@@ -67,12 +71,6 @@ fun PsiNamedElement.getClassNameForCompanionObject(): String? {
     }
 }
 
-private fun dataClassComponentMethodName(element: KtParameter): String? =
-    element.dataClassComponentFunction()?.name?.asString()
-
-private fun isDataClassComponentFunction(element: KtParameter): Boolean =
-    element.dataClassComponentFunction() != null
-
 fun KtParameter.dataClassComponentFunction(): FunctionDescriptor? {
     if (!isDataClassProperty()) return null
 
@@ -104,7 +102,13 @@ fun getTopMostOverriddenElementsToHighlight(target: PsiElement): List<PsiElement
     return descriptorsToHighlight.mapNotNull { it.source.getPsi() }.filter { it != target }
 }
 
-fun isCallReceiverRefersToCompanionObject(element: PsiElement, companionObject: KtObjectDeclaration): Boolean {
+val KtDeclaration.descriptor: DeclarationDescriptor?
+    get() = if (this is KtParameter) this.descriptor else this.resolveToDescriptorIfAny(BodyResolveMode.FULL)
+
+val KtParameter.descriptor: ValueParameterDescriptor?
+    get() = this.resolveToParameterDescriptorIfAny(BodyResolveMode.FULL)
+
+fun isCallReceiverRefersToCompanionObject(element: KtElement, companionObject: KtObjectDeclaration): Boolean {
     val companionObjectDescriptor = companionObject.descriptor
     val bindingContext = element.analyze()
     val resolvedCall = bindingContext[BindingContext.CALL, element]?.getResolvedCall(bindingContext) ?: return false

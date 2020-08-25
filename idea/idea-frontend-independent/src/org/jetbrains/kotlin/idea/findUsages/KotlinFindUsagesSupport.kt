@@ -11,10 +11,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiReference
 import com.intellij.psi.search.GlobalSearchScope
 import org.jetbrains.annotations.Nls
-import org.jetbrains.kotlin.psi.KtClassOrObject
-import org.jetbrains.kotlin.psi.KtDeclaration
-import org.jetbrains.kotlin.psi.KtObjectDeclaration
-import org.jetbrains.kotlin.psi.KtParameter
+import org.jetbrains.kotlin.psi.*
 
 interface KotlinFindUsagesSupport {
 
@@ -28,7 +25,7 @@ interface KotlinFindUsagesSupport {
             get() =  getInstance(project).isDataClassComponentFunction(this)
 
         //isCallReceiverRefersToCompanionObject
-        fun PsiElement.isCallReceiverRefersToCompanionObject(companionObject: KtObjectDeclaration): Boolean =
+        fun KtElement.isCallReceiverRefersToCompanionObject(companionObject: KtObjectDeclaration): Boolean =
             getInstance(project).isCallReceiverRefersToCompanionObject(this, companionObject)
 
         //getTopMostOverriddenElementsToHighlight
@@ -53,7 +50,7 @@ interface KotlinFindUsagesSupport {
             getInstance(project).sourcesAndLibraries(delegate, project)
     }
 
-    fun isCallReceiverRefersToCompanionObject(element: PsiElement, companionObject: KtObjectDeclaration): Boolean
+    fun isCallReceiverRefersToCompanionObject(element: KtElement, companionObject: KtObjectDeclaration): Boolean
 
     fun isDataClassComponentFunction(element: KtParameter): Boolean
 

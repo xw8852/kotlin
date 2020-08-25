@@ -19,12 +19,14 @@ import com.intellij.util.MergeQuery
 import com.intellij.util.Processor
 import com.intellij.util.Query
 import org.jetbrains.kotlin.asJava.*
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetRepresentativeLightMethod
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightMethods
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.findDeepestSuperMethodsNoWrapping
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.forEachKotlinOverride
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.forEachOverridingMethod
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isOverridable
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedCreateKtFakeLightMethod
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedGetRepresentativeLightMethod
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedIsKtFakeLightClass
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedToLightMethods
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.findDeepestSuperMethodsNoWrapping
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.forEachKotlinOverride
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.forEachOverridingMethod
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.isOverridable
 import org.jetbrains.kotlin.idea.search.allScope
 import org.jetbrains.kotlin.idea.search.excludeKotlinSources
 import org.jetbrains.kotlin.idea.util.application.runReadAction
@@ -105,7 +107,7 @@ fun PsiElement.toPossiblyFakeLightMethods(): List<PsiMethod> {
     val lightMethods = element.providedToLightMethods()
     if (lightMethods.isNotEmpty()) return lightMethods
 
-    return if (element is KtNamedDeclaration) listOfNotNull(KtFakeLightMethod.get(element)) else emptyList()
+    return if (element is KtNamedDeclaration) listOfNotNull(providedCreateKtFakeLightMethod(element)) else emptyList()
 }
 
 fun KtNamedDeclaration.forEachOverridingElement(
@@ -132,7 +134,7 @@ fun PsiMethod.forEachImplementation(
 fun PsiClass.forEachDeclaredMemberOverride(processor: (superMember: PsiElement, overridingMember: PsiElement) -> Boolean) {
     val scope = runReadAction { useScope }
 
-    if (this !is KtFakeLightClass) {
+    if (providedIsKtFakeLightClass()) {
         AllOverridingMethodsSearch.search(this, scope.excludeKotlinSources()).all { processor(it.first, it.second) }
     }
 

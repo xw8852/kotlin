@@ -3,14 +3,13 @@
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
-package org.jetbrains.kotlin.idea.findUsages
+package org.jetbrains.kotlin.idea.search
 
 import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.SearchScope
-import org.jetbrains.kotlin.idea.search.ReceiverTypeSearcherInfo
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.*
@@ -24,11 +23,11 @@ interface KotlinSearchUsagesSupport {
         }
 
         //dataClassComponentMethodName
-        val KtParameter.dataClassComponentMethodName: String
+        val KtParameter.dataClassComponentMethodName: String?
             get() = getInstance(project).dataClassComponentMethodName(this)
 
         //hasType
-        val PsiElement.hasType: Boolean
+        val KtExpression.hasType: Boolean
             get() = getInstance(project).hasType(this)
 
         //isSamInterface
@@ -76,7 +75,6 @@ interface KotlinSearchUsagesSupport {
         fun findDeepestSuperMethodsNoWrapping(method: PsiElement): List<PsiElement> =
             getInstance(method.project).findDeepestSuperMethodsNoWrapping(method)
 
-        //KotlinTypeAliasShortNameIndex.getInstance().get(targetShortName, target.project, target.project.allScope())
         fun findTypeAliasByShortName(shortName: String, project: Project, scope: GlobalSearchScope): Collection<KtTypeAlias> =
             getInstance(project).findTypeAliasByShortName(shortName, project, scope)
 
@@ -102,9 +100,9 @@ interface KotlinSearchUsagesSupport {
             getInstance(project).isExpectDeclaration(this)
     }
 
-    fun dataClassComponentMethodName(element: KtParameter): String
+    fun dataClassComponentMethodName(element: KtParameter): String?
 
-    fun hasType(element: PsiElement): Boolean
+    fun hasType(element: KtExpression): Boolean
 
     fun isSamInterface(psiClass: PsiClass): Boolean
 

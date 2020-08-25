@@ -16,8 +16,8 @@ import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.asJava.ImpreciseResolveResult
 import org.jetbrains.kotlin.asJava.ImpreciseResolveResult.*
 import org.jetbrains.kotlin.idea.caches.trackers.KotlinCodeBlockModificationListener
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.findTypeAliasByShortName
-import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.getDefaultImports
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.findTypeAliasByShortName
+import org.jetbrains.kotlin.idea.search.KotlinSearchUsagesSupport.Companion.getDefaultImports
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.psi.*
@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * with the given qualified name.
  */
 class PsiBasedClassResolver @TestOnly constructor(private val targetClassFqName: String) {
+
     private val targetShortName = targetClassFqName.substringAfterLast('.')
     private val targetPackage = targetClassFqName.substringBeforeLast('.', "")
 

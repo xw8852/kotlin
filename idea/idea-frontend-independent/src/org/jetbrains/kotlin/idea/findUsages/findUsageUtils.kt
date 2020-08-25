@@ -27,8 +27,8 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.usageView.UsageInfo
 import com.intellij.usages.UsageViewManager
 import com.intellij.util.Query
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightClass
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightElements
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedToLightClass
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedToLightElements
 import org.jetbrains.kotlin.idea.references.KtReference
 import org.jetbrains.kotlin.psi.KtConstructor
 import org.jetbrains.kotlin.psi.KtDeclaration

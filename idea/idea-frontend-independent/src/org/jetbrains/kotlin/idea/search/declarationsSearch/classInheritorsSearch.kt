@@ -22,8 +22,8 @@ import com.intellij.psi.PsiModifier
 import com.intellij.psi.search.searches.ClassInheritorsSearch
 import com.intellij.util.EmptyQuery
 import com.intellij.util.Query
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedCreateKtFakeLightClass
-import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightClassWithBuiltinMapping
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedCreateKtFakeLightClass
+import org.jetbrains.kotlin.idea.asJava.LightClassProvider.Companion.providedToLightClassWithBuiltinMapping
 import org.jetbrains.kotlin.idea.util.application.runReadAction
 import org.jetbrains.kotlin.psi.KtClassOrObject
 

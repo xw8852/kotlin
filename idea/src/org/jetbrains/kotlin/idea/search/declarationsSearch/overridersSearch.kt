@@ -27,7 +27,7 @@ import org.jetbrains.kotlin.types.substitutions.getTypeSubstitutor
 import org.jetbrains.kotlin.util.findCallableMemberBySignature
 import java.util.*
 
-private fun forEachKotlinOverride(
+fun forEachKotlinOverride(
     ktClass: KtClass,
     members: List<KtNamedDeclaration>,
     scope: SearchScope,
