@@ -64,7 +64,6 @@ internal abstract class FirBaseTowerResolveTask(
         }
     }
 
-
     protected fun FirScope.toScopeTowerLevel(
         extensionReceiver: ReceiverValue? = null,
         extensionsOnly: Boolean = false,
@@ -82,7 +81,6 @@ internal abstract class FirBaseTowerResolveTask(
         extensionReceiver, implicitExtensionInvokeMode,
         scopeSession = components.scopeSession
     )
-
 
     protected inline fun enumerateTowerLevels(
         parentGroup: TowerGroup = TowerGroup.EmptyRoot,
