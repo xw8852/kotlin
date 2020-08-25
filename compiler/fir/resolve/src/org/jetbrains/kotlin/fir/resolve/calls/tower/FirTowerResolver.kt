@@ -5,6 +5,9 @@
 
 package org.jetbrains.kotlin.fir.resolve.calls.tower
 
+import org.jetbrains.kotlin.fir.expressions.FirQualifiedAccessExpression
+import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
+import org.jetbrains.kotlin.fir.references.FirSuperReference
 import org.jetbrains.kotlin.fir.resolve.BodyResolveComponents
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.resolve.scope
@@ -27,11 +30,49 @@ class FirTowerResolver(
     ): CandidateCollector {
         val candidateFactoriesAndCollectors = buildCandidateFactoriesAndCollectors(info, collector)
 
-        val towerResolverSession = FirTowerResolverSession(components, manager, candidateFactoriesAndCollectors, info)
-        towerResolverSession.runResolution(info)
+        enqueueResolutionTasks(components, manager, candidateFactoriesAndCollectors, info)
 
         manager.runTasks()
         return collector
+    }
+
+    private fun enqueueResolutionTasks(
+        components: BodyResolveComponents,
+        manager: TowerResolveManager,
+        candidateFactoriesAndCollectors: CandidateFactoriesAndCollectors,
+        info: CallInfo
+    ) {
+        val invokeResolveTowerExtension = FirInvokeResolveTowerExtension(components, manager, candidateFactoriesAndCollectors)
+
+        val mainTask = FirTowerResolveTask(
+            components,
+            manager,
+            TowerDataElementsForName(info.name, components.towerDataContext),
+            candidateFactoriesAndCollectors.resultCollector,
+            candidateFactoriesAndCollectors.candidateFactory,
+            candidateFactoriesAndCollectors.stubReceiverCandidateFactory
+        )
+        when (val receiver = info.explicitReceiver) {
+            is FirResolvedQualifier -> {
+                manager.enqueueResolverTask { mainTask.runResolverForQualifierReceiver(info, receiver) }
+                invokeResolveTowerExtension.enqueueResolveTasksForQualifier(info, receiver)
+            }
+            null -> {
+                manager.enqueueResolverTask { mainTask.runResolverForNoReceiver(info) }
+                invokeResolveTowerExtension.enqueueResolveTasksForNoReceiver(info)
+            }
+            else -> {
+                if (receiver is FirQualifiedAccessExpression) {
+                    val calleeReference = receiver.calleeReference
+                    if (calleeReference is FirSuperReference) {
+                        return manager.enqueueResolverTask { mainTask.runResolverForSuperReceiver(info, receiver.typeRef) }
+                    }
+                }
+
+                manager.enqueueResolverTask { mainTask.runResolverForExpressionReceiver(info, receiver) }
+                invokeResolveTowerExtension.enqueueResolveTasksForExpressionReceiver(info, receiver)
+            }
+        }
     }
 
     fun runResolverForDelegatingConstructor(

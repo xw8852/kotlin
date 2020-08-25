@@ -23,10 +23,11 @@ import org.jetbrains.kotlin.fir.types.isExtensionFunctionType
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind
 import org.jetbrains.kotlin.util.OperatorNameConventions
 
-class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSession) {
-
-    private val components get() = resolverSession.components
-    private val manager get() = resolverSession.manager
+internal class FirInvokeResolveTowerExtension(
+    private val components: BodyResolveComponents,
+    private val manager: TowerResolveManager,
+    private val candidateFactoriesAndCollectors: CandidateFactoriesAndCollectors
+) {
 
     fun enqueueResolveTasksForQualifier(info: CallInfo, receiver: FirResolvedQualifier) {
         if (info.callKind != CallKind.Function) return
@@ -103,7 +104,8 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
     ) {
         val collector = CandidateCollector(components, components.resolutionStageRunner)
         val invokeReceiverProcessor = InvokeReceiverResolveTask(
-            resolverSession,
+            components,
+            manager,
             towerDataElementsForName,
             collector,
             CandidateFactory(components, invokeReceiverInfo),
@@ -116,7 +118,7 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
                 collector.newDataSet()
             }
         )
-        resolverSession.manager.enqueueResolverTask {
+        manager.enqueueResolverTask {
             task(invokeReceiverProcessor)
         }
     }
@@ -182,12 +184,13 @@ class FirTowerInvokeResolver(private val resolverSession: FirTowerResolverSessio
     ) {
         val invokeOnGivenReceiverCandidateFactory = CandidateFactory(components, invokeFunctionInfo)
         val task = InvokeFunctionResolveTask(
-            resolverSession,
+            components,
+            manager,
             TowerDataElementsForName(invokeFunctionInfo.name, components.towerDataContext),
             receiverGroup,
-            resolverSession.candidateFactoriesAndCollectors.resultCollector,
+            candidateFactoriesAndCollectors.resultCollector,
             invokeOnGivenReceiverCandidateFactory,
-            resolverSession.candidateFactoriesAndCollectors.stubReceiverCandidateFactory
+            candidateFactoriesAndCollectors.stubReceiverCandidateFactory
         )
         if (invokeBuiltinExtensionMode) {
             manager.enqueueResolverTask {
@@ -263,13 +266,15 @@ private fun BodyResolveComponents.createExplicitReceiverForInvokeByCallable(
 }
 
 private class InvokeReceiverResolveTask(
-    resolverSession: FirTowerResolverSession,
+    components: BodyResolveComponents,
+    manager: TowerResolveManager,
     towerDataElementsForName: TowerDataElementsForName,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     private val onSuccessfulLevel: (TowerGroup) -> Unit
 ) : FirTowerResolveTask(
-    resolverSession,
+    components,
+    manager,
     towerDataElementsForName,
     collector,
     candidateFactory,
@@ -284,14 +289,16 @@ private class InvokeReceiverResolveTask(
 }
 
 private class InvokeFunctionResolveTask(
-    resolverSession: FirTowerResolverSession,
+    components: BodyResolveComponents,
+    manager: TowerResolveManager,
     towerDataElementsForName: TowerDataElementsForName,
     private val receiverGroup: TowerGroup,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     stubReceiverCandidateFactory: CandidateFactory? = null
 ) : FirBaseTowerResolveTask(
-    resolverSession,
+    components,
+    manager,
     towerDataElementsForName,
     collector,
     candidateFactory,

@@ -8,6 +8,7 @@ package org.jetbrains.kotlin.fir.resolve.calls.tower
 import org.jetbrains.kotlin.fir.asReversedFrozen
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.FirResolvedQualifier
+import org.jetbrains.kotlin.fir.resolve.BodyResolveComponents
 import org.jetbrains.kotlin.fir.resolve.FirTowerDataContext
 import org.jetbrains.kotlin.fir.resolve.calls.*
 import org.jetbrains.kotlin.fir.resolve.scope
@@ -37,14 +38,14 @@ internal class TowerDataElementsForName(
 }
 
 internal abstract class FirBaseTowerResolveTask(
-    protected val resolverSession: FirTowerResolverSession,
+    protected val components: BodyResolveComponents,
+    private val manager: TowerResolveManager,
     protected val towerDataElementsForName: TowerDataElementsForName,
-    protected val collector: CandidateCollector,
-    protected val candidateFactory: CandidateFactory,
-    protected val stubReceiverCandidateFactory: CandidateFactory? = null
+    private val collector: CandidateCollector,
+    private val candidateFactory: CandidateFactory,
+    private val stubReceiverCandidateFactory: CandidateFactory? = null
 ) {
-    protected val session get() = resolverSession.components.session
-    protected val components get() = resolverSession.components
+    protected val session get() = components.session
 
     private val handler: TowerLevelHandler = TowerLevelHandler()
 
@@ -113,7 +114,7 @@ internal abstract class FirBaseTowerResolveTask(
         explicitReceiverKind: ExplicitReceiverKind
     ): Boolean {
         val finalGroup = interceptTowerGroup(group)
-        resolverSession.manager.requestGroup(finalGroup)
+        manager.requestGroup(finalGroup)
 
 
         val result = handler.handleLevel(
@@ -132,13 +133,15 @@ internal abstract class FirBaseTowerResolveTask(
 }
 
 internal open class FirTowerResolveTask(
-    resolverSession: FirTowerResolverSession,
+    components: BodyResolveComponents,
+    manager: TowerResolveManager,
     towerDataElementsForName: TowerDataElementsForName,
     collector: CandidateCollector,
     candidateFactory: CandidateFactory,
     stubReceiverCandidateFactory: CandidateFactory? = null
 ) : FirBaseTowerResolveTask(
-    resolverSession,
+    components,
+    manager,
     towerDataElementsForName,
     collector,
     candidateFactory,
