@@ -35,6 +35,7 @@ import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.util.IdSignature
 import org.jetbrains.kotlin.ir.util.constructors
+import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
 class Fir2IrClassifierStorage(
@@ -138,6 +139,14 @@ class Fir2IrClassifierStorage(
             localStorage.getLocalClass(klass)
         } else {
             classCache[klass]
+        }
+    }
+
+    internal fun getCachedIrClass(classId: ClassId): IrClass? {
+        return if (classId.isLocal) {
+            localStorage.getLocalClass(classId)
+        } else {
+            classCache.keys.find { firClass -> firClass.classId == classId }?.let { classCache[it] }
         }
     }
 
