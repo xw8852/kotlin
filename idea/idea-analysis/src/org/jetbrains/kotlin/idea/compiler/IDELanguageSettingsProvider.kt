@@ -33,8 +33,6 @@ import org.jetbrains.kotlin.cli.common.arguments.parseCommandLineArguments
 import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.config.*
 import org.jetbrains.kotlin.idea.caches.project.*
-import org.jetbrains.kotlin.idea.core.script.ScriptConfigurationManager
-import org.jetbrains.kotlin.idea.core.script.configuration.CompositeScriptConfigurationManager
 import org.jetbrains.kotlin.idea.core.script.scriptRelatedModuleName
 import org.jetbrains.kotlin.idea.project.*
 import org.jetbrains.kotlin.platform.TargetPlatform
@@ -136,14 +134,7 @@ private fun getLanguageSettingsForScripts(project: Project, file: VirtualFile, s
             val jvmTarget =
                 compilerArguments.jvmTarget?.let { JvmTarget.fromString(it) } ?: detectDefaultTargetPlatformVersion(scriptModule?.platform)
 
-            val compositeScriptConfigurationManager = ScriptConfigurationManager.getInstance(project) as CompositeScriptConfigurationManager
-
-            val scriptLanguageVersion = compositeScriptConfigurationManager.getLightScriptInfo(file.path)?.definition?.languageVersion
-            val languageVersionSettings = project.getLanguageVersionSettings(
-                providedLanguageVersion = scriptLanguageVersion,
-                providedApiVersion = scriptLanguageVersion?.let { ApiVersion.createByLanguageVersion(it) },
-                contextModule = scriptModule
-            )
+            val languageVersionSettings = project.getLanguageVersionSettings(contextModule = scriptModule)
             val versionSettings = if (languageVersionSettings.languageVersion.isLess(verSettings.languageVersion)) {
                 languageVersionSettings
             } else {

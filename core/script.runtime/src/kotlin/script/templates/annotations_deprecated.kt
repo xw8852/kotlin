@@ -11,7 +11,8 @@ import kotlin.script.dependencies.Environment
 @Deprecated("temporary workaround for missing functionality, will be replaced by the new API soon")
 // Note: all subclasses should provide the same constructor
 open class ScriptTemplateAdditionalCompilerArgumentsProvider(val arguments: Iterable<String> = emptyList()) {
-    open fun getAdditionalCompilerArguments(@Suppress("UNUSED_PARAMETER") environment: Environment?): Iterable<String> = arguments
+    open fun getAdditionalCompilerArguments(@Suppress("UNUSED_PARAMETER") environment: Environment?): Iterable<String> =
+        ((environment?.get("extraCompilerArguments") as? List<String>) ?: emptyList()) + arguments
 }
 
 // Should be deprecated as well, but since we don't have replacement as of yet, leaving it as is

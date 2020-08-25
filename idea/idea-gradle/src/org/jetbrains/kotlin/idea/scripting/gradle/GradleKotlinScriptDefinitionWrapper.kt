@@ -16,9 +16,8 @@ import kotlin.script.experimental.location.ScriptExpectedLocation
 class GradleKotlinScriptDefinitionWrapper(
     hostConfiguration: ScriptingHostConfiguration,
     legacyDefinition: KotlinScriptDefinitionFromAnnotatedTemplate,
-    gradleVersion: String,
-    providedLanguageVersion: LanguageVersion?
-) : ScriptDefinition.FromLegacy(hostConfiguration, legacyDefinition, providedLanguageVersion) {
+    gradleVersion: String
+) : ScriptDefinition.FromLegacy(hostConfiguration, legacyDefinition) {
     override val compilationConfiguration by lazy {
         ScriptCompilationConfigurationFromDefinition(
             hostConfiguration,

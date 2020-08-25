@@ -7,7 +7,6 @@ package org.jetbrains.kotlin.scripting.definitions
 
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.util.io.FileUtilRt
-import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.scripting.resolve.KotlinScriptDefinitionFromAnnotatedTemplate
 import java.io.File
 import kotlin.reflect.KClass
@@ -41,9 +40,6 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open val platform: String
         get() = "JVM"
 
-    open val languageVersion: LanguageVersion?
-        get() = null
-
     open val isDefault = false
 
     // Store IDE-related settings in script definition
@@ -66,8 +62,7 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     @Suppress("OverridingDeprecatedMember", "DEPRECATION")
     open class FromLegacy(
         override val hostConfiguration: ScriptingHostConfiguration,
-        override val legacyDefinition: KotlinScriptDefinition,
-        override val languageVersion: LanguageVersion? = null
+        override val legacyDefinition: KotlinScriptDefinition
     ) : ScriptDefinition() {
 
         override val compilationConfiguration: ScriptCompilationConfiguration by lazy {
@@ -115,16 +110,14 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromLegacyTemplate(
         hostConfiguration: ScriptingHostConfiguration,
         template: KClass<*>,
-        templateClasspath: List<File> = emptyList(),
-        languageVersion: LanguageVersion? = null
+        templateClasspath: List<File> = emptyList()
     ) : FromLegacy(
         hostConfiguration,
         KotlinScriptDefinitionFromAnnotatedTemplate(
             template,
             hostConfiguration[ScriptingHostConfiguration.getEnvironment]?.invoke(),
             templateClasspath
-        ),
-        languageVersion
+        )
     )
 
     abstract class FromConfigurationsBase() : ScriptDefinition() {
@@ -188,14 +181,12 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromConfigurations(
         override val hostConfiguration: ScriptingHostConfiguration,
         override val compilationConfiguration: ScriptCompilationConfiguration,
-        override val evaluationConfiguration: ScriptEvaluationConfiguration?,
-        override val languageVersion: LanguageVersion? = null
+        override val evaluationConfiguration: ScriptEvaluationConfiguration?
     ) : FromConfigurationsBase()
 
     open class FromNewDefinition(
         private val baseHostConfiguration: ScriptingHostConfiguration,
-        private val definition: kotlin.script.experimental.host.ScriptDefinition,
-        override val languageVersion: LanguageVersion? = null
+        private val definition: kotlin.script.experimental.host.ScriptDefinition
     ) : FromConfigurationsBase() {
         override val hostConfiguration: ScriptingHostConfiguration
             get() = definition.compilationConfiguration[ScriptCompilationConfiguration.hostConfiguration] ?: baseHostConfiguration
@@ -207,12 +198,10 @@ abstract class ScriptDefinition : UserDataHolderBase() {
     open class FromTemplate(
         baseHostConfiguration: ScriptingHostConfiguration,
         template: KClass<*>,
-        contextClass: KClass<*> = ScriptCompilationConfiguration::class,
-        languageVersion: LanguageVersion? = null
+        contextClass: KClass<*> = ScriptCompilationConfiguration::class
     ) : FromNewDefinition(
         baseHostConfiguration,
         createScriptDefinitionFromTemplate(KotlinType(template), baseHostConfiguration, contextClass),
-        languageVersion
     )
 
     companion object {
