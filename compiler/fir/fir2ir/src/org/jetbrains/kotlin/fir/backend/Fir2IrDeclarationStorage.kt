@@ -198,13 +198,16 @@ class Fir2IrDeclarationStorage(
 
     internal fun findIrParent(packageFqName: FqName, parentClassId: ClassId?, firBasedSymbol: FirBasedSymbol<*>): IrDeclarationParent? {
         return if (parentClassId != null) {
-            // TODO: this will never work for local classes
-            val parentFirSymbol = firSymbolProvider.getClassLikeSymbolByFqName(parentClassId)
-            if (parentFirSymbol is FirClassSymbol) {
-                val parentIrSymbol = classifierStorage.getIrClassSymbol(parentFirSymbol)
-                parentIrSymbol.owner
+            if (parentClassId.isLocal) {
+                classifierStorage.getCachedIrClass(parentClassId)
             } else {
-                null
+                val parentFirSymbol = firSymbolProvider.getClassLikeSymbolByFqName(parentClassId)
+                if (parentFirSymbol is FirClassSymbol) {
+                    val parentIrSymbol = classifierStorage.getIrClassSymbol(parentFirSymbol)
+                    parentIrSymbol.owner
+                } else {
+                    null
+                }
             }
         } else {
             val containerFile = when (firBasedSymbol) {
