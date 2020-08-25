@@ -7,10 +7,13 @@ package org.jetbrains.kotlin.fir.backend.jvm
 
 import org.jetbrains.kotlin.backend.common.serialization.mangle.*
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.backend.Fir2IrClassifierStorage
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.fir.signaturer.FirMangler
 
 class FirJvmKotlinMangler(private val session: FirSession) : AbstractKotlinMangler<FirDeclaration>(), FirMangler {
+
+    override lateinit var classifierStorage: Fir2IrClassifierStorage
 
     override val FirDeclaration.mangleString: String
         get() = getMangleComputer(MangleMode.FULL).computeMangle(this)
@@ -32,6 +35,6 @@ class FirJvmKotlinMangler(private val session: FirSession) : AbstractKotlinMangl
     }
 
     override fun getMangleComputer(mode: MangleMode): KotlinMangleComputer<FirDeclaration> {
-        return FirJvmMangleComputer(StringBuilder(256), mode, session)
+        return FirJvmMangleComputer(StringBuilder(256), mode, session, classifierStorage)
     }
 }

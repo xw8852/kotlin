@@ -282,6 +282,8 @@ class Fir2IrConverter(
             components.typeConverter = typeConverter
             components.visibilityConverter = visibilityConverter
             components.builtIns = builtIns
+            mangler.classifierStorage = classifierStorage
+
             val irFiles = mutableListOf<IrFile>()
 
             val converter = Fir2IrConverter(moduleDescriptor, sourceManager, components)

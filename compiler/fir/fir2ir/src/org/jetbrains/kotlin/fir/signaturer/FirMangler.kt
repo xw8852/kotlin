@@ -5,10 +5,13 @@
 
 package org.jetbrains.kotlin.fir.signaturer
 
+import org.jetbrains.kotlin.fir.backend.Fir2IrClassifierStorage
 import org.jetbrains.kotlin.fir.declarations.FirDeclaration
 import org.jetbrains.kotlin.ir.util.KotlinMangler
 
 interface FirMangler : KotlinMangler<FirDeclaration> {
     override val manglerName: String
         get() = "Fir"
+
+    var classifierStorage: Fir2IrClassifierStorage
 }

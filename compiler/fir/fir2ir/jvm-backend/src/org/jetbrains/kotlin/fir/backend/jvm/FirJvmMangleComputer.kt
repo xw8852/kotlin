@@ -11,6 +11,7 @@ import org.jetbrains.kotlin.backend.common.serialization.mangle.MangleMode
 import org.jetbrains.kotlin.backend.common.serialization.mangle.collectForMangler
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
+import org.jetbrains.kotlin.fir.backend.Fir2IrClassifierStorage
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.render
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
@@ -26,7 +27,8 @@ import java.lang.IllegalStateException
 open class FirJvmMangleComputer(
     private val builder: StringBuilder,
     private val mode: MangleMode,
-    private val session: FirSession
+    private val session: FirSession,
+    private val classifierStorage: Fir2IrClassifierStorage
 ) : FirVisitor<Unit, Boolean>(), KotlinMangleComputer<FirDeclaration> {
 
     private val typeParameterContainer = ArrayList<FirMemberDeclaration>(4)
@@ -40,7 +42,7 @@ open class FirJvmMangleComputer(
     private fun addReturnType(): Boolean = false
 
     override fun copy(newMode: MangleMode): FirJvmMangleComputer =
-        FirJvmMangleComputer(builder, newMode, session)
+        FirJvmMangleComputer(builder, newMode, session, classifierStorage)
 
     private fun StringBuilder.appendName(s: String) {
         if (mode.fqn) {
@@ -153,6 +155,7 @@ open class FirJvmMangleComputer(
     }
 
     private fun FirTypeParameter.effectiveParent(): FirMemberDeclaration {
+        classifierStorage.getTypeParameterParent(this)?.let { return it as FirMemberDeclaration }
         for (parent in typeParameterContainer) {
             if (this in parent.typeParameters) {
                 return parent
@@ -190,7 +193,9 @@ open class FirJvmMangleComputer(
     private fun StringBuilder.mangleTypeParameterReference(typeParameter: FirTypeParameter) {
         val parent = typeParameter.effectiveParent()
         val ci = typeParameterContainer.indexOf(parent)
-        require(ci >= 0) { "No type container found for ${typeParameter.render()}" }
+        require(ci >= 0) {
+            "No type container found for ${typeParameter.render()}"
+        }
         appendSignature(ci)
         appendSignature(MangleConstant.INDEX_SEPARATOR)
         appendSignature(parent.typeParameters.indexOf(typeParameter))

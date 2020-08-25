@@ -51,6 +51,8 @@ class Fir2IrClassifierStorage(
 
     private val typeParameterCacheForSetter = mutableMapOf<FirTypeParameter, IrTypeParameter>()
 
+    private val typeParameterParentCache = mutableMapOf<FirTypeParameter, FirTypeParametersOwner>()
+
     private val enumEntryCache = mutableMapOf<FirEnumEntry, IrEnumEntry>()
 
     private val localStorage = Fir2IrLocalStorage()
@@ -92,6 +94,9 @@ class Fir2IrClassifierStorage(
     internal fun preCacheTypeParameters(owner: FirTypeParameterRefsOwner) {
         for ((index, typeParameter) in owner.typeParameters.withIndex()) {
             val original = typeParameter.symbol.fir
+            if (owner is FirTypeParametersOwner) {
+                typeParameterParentCache[original] = owner
+            }
             getCachedIrTypeParameter(original, index)
                 ?: createIrTypeParameterWithoutBounds(original, index)
             if (owner is FirProperty && owner.isVar) {
@@ -108,6 +113,9 @@ class Fir2IrClassifierStorage(
     ) {
         typeParameters = owner.typeParameters.mapIndexedNotNull { index, typeParameter ->
             if (typeParameter !is FirTypeParameter) return@mapIndexedNotNull null
+            if (owner is FirTypeParametersOwner) {
+                typeParameterParentCache[typeParameter] = owner
+            }
             getIrTypeParameter(typeParameter, index, typeContext).apply {
                 parent = this@setTypeParameters
                 if (superTypes.isEmpty()) {
@@ -123,6 +131,9 @@ class Fir2IrClassifierStorage(
             setTypeParameters(klass)
         }
     }
+
+    fun getTypeParameterParent(typeParameter: FirTypeParameter): FirTypeParametersOwner? =
+        typeParameterParentCache[typeParameter]
 
     private fun IrClass.declareSupertypes(klass: FirClass<*>) {
         superTypes = klass.superTypeRefs.map { superTypeRef -> superTypeRef.toIrType() }
