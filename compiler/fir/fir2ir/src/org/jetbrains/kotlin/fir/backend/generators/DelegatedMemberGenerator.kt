@@ -42,6 +42,22 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.types.Variance
 import org.jetbrains.kotlin.utils.DFS
 
+class My {
+    val x: String
+
+    private fun foo() {
+        println(x.length)
+    }
+
+    init {
+        foo()
+        x = ""
+    }
+}
+
+
+
+
 /**
  * A generator for delegated members from implementation by delegation.
  *
@@ -86,8 +102,15 @@ internal class DelegatedMemberGenerator(
                     val firSuperFunction = declarationStorage.findOverriddenFirFunction(member, superClassId) ?: return
                     var firSubFunction: FirSimpleFunction? = null
                     scope.processFunctionsByName(member.name) {
-                        if (it.callableId.classId == firSubClass.classId && it.overriddenSymbol?.fir == firSuperFunction) {
-                            firSubFunction = it.fir as FirSimpleFunction
+                        if (it.callableId.classId == firSubClass.classId) {
+                            var overriddenSymbol = it.overriddenSymbol
+                            while (overriddenSymbol != null) {
+                                if (overriddenSymbol.fir == firSuperFunction) {
+                                    firSubFunction = it.fir as FirSimpleFunction
+                                    break
+                                }
+                                overriddenSymbol = overriddenSymbol.overriddenSymbol
+                            }
                         }
                     }
                     val irSubFunction = generateDelegatedFunction(subClass, irField, member, firSuperFunction)
