@@ -43,12 +43,11 @@ internal class TowerLevelHandler {
         towerLevel: SessionBasedTowerLevel
     ): ProcessorAction {
         processResult = ProcessorAction.NONE
-        val resultCollector = collector
         val processor =
             TowerScopeLevelProcessor(
                 info.explicitReceiver,
                 explicitReceiverKind,
-                resultCollector,
+                collector,
                 candidateFactory,
                 group
             )
@@ -57,7 +56,7 @@ internal class TowerLevelHandler {
             CallKind.VariableAccess -> {
                 towerLevel.processProperties(info.name, processor)
 
-                if (!resultCollector.isSuccess()) {
+                if (!collector.isSuccess()) {
                     towerLevel.processObjectsAsVariables(info.name, processor)
                 }
             }
@@ -75,13 +74,13 @@ internal class TowerLevelHandler {
                         } else {
                             ExplicitReceiverKind.EXTENSION_RECEIVER
                         },
-                        resultCollector,
+                        collector,
                         stubReceiverCandidateFactory!!, group
                     )
                     val towerLevelWithStubReceiver = towerLevel.replaceReceiverValue(stubReceiverValue)
                     towerLevelWithStubReceiver.processFunctionsAndProperties(info.name, stubProcessor)
                     // NB: we don't perform this for implicit Unit
-                    if (!resultCollector.isSuccess() && info.explicitReceiver?.typeRef !is FirImplicitBuiltinTypeRef) {
+                    if (!collector.isSuccess() && info.explicitReceiver?.typeRef !is FirImplicitBuiltinTypeRef) {
                         towerLevel.processFunctionsAndProperties(info.name, processor)
                     }
                 } else {
