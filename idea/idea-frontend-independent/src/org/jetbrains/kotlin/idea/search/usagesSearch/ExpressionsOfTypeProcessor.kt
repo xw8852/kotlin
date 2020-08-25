@@ -23,17 +23,17 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
 import org.jetbrains.annotations.TestOnly
 import org.jetbrains.kotlin.KtNodeTypes
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightClass
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
-import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.diagnostics.PsiDiagnosticUtils
 import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.hasType
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isInProjectSource
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.isSamInterface
-import org.jetbrains.kotlin.idea.refactoring.fqName.getKotlinFqName
 import org.jetbrains.kotlin.idea.references.KtDestructuringDeclarationReference
 import org.jetbrains.kotlin.idea.search.excludeFileTypes
+import org.jetbrains.kotlin.idea.search.getKotlinFqName
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
 import org.jetbrains.kotlin.idea.search.restrictToKotlinSources
@@ -582,7 +582,7 @@ class ExpressionsOfTypeProcessor(
                 val parent = typeRefParent.parent
                 if (parent is KtSuperTypeCallEntry) {
                     val classOrObject = (parent.parent as KtSuperTypeList).parent as KtClassOrObject
-                    val psiClass = classOrObject.toLightClass()
+                    val psiClass = classOrObject.providedToLightClass()
                     psiClass?.let { addClassToProcess(it) }
                     return true
                 }
@@ -591,7 +591,7 @@ class ExpressionsOfTypeProcessor(
             is KtSuperTypeListEntry -> { // super-interface name in the list of bases
                 if (typeRef == typeRefParent.typeReference) {
                     val classOrObject = (typeRefParent.parent as KtSuperTypeList).parent as KtClassOrObject
-                    val psiClass = classOrObject.toLightClass()
+                    val psiClass = classOrObject.providedToLightClass()
                     psiClass?.let { addClassToProcess(it) }
                     return true
                 }

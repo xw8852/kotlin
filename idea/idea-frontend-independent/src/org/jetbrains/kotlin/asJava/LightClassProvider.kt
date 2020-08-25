@@ -5,27 +5,81 @@
 
 package org.jetbrains.kotlin.asJava
 
+import com.intellij.openapi.components.ServiceManager
+import com.intellij.openapi.project.Project
 import com.intellij.psi.*
 import com.intellij.psi.impl.light.AbstractLightClass
 import com.intellij.psi.impl.light.LightMethod
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightElement
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport
 import org.jetbrains.kotlin.load.java.structure.LightClassOriginKind
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 
-object LightClassUtil {
-    fun getLightFieldForCompanionObject(companionObject: KtClassOrObject): PsiField? = TODO()
-    fun getLightClassPropertyMethods(parameter: KtParameter): PropertyAccessorsPsiMethods = TODO()
-    fun getLightClassPropertyMethods(property: KtProperty): PropertyAccessorsPsiMethods = TODO()
-    fun getLightClassMethods(function: KtFunction): List<PsiMethod> = TODO()
+interface LightClassProvider {
 
-    class PropertyAccessorsPsiMethods(val getter: PsiMethod?,
-                                      val setter: PsiMethod?,
-                                      val backingField: PsiField?,
-                                      additionalAccessors: List<PsiMethod>) : Iterable<PsiMethod> {
-        val allDeclarations: List<PsiNamedElement> get() = TODO()
+    fun getLightFieldForCompanionObject(companionObject: KtClassOrObject): PsiField?
+
+    fun getLightClassMethods(function: KtFunction): List<PsiMethod>
+
+    //getLightClassPropertyMethods.allDeclarations
+    fun getLightClassParameterDeclarations(parameter: KtParameter): List<PsiNamedElement>
+
+    //getLightClassPropertyMethods.allDeclarations
+    fun getLightClassPropertyDeclarations(property: KtProperty): List<PsiNamedElement>
+
+    fun toLightClassWithBuiltinMapping(classOrObject: KtClassOrObject): PsiClass?
+
+    fun toLightMethods(psiElement: PsiElement): List<PsiMethod>
+
+    fun toLightClass(classOrObject: KtClassOrObject): KtLightClass?
+
+    fun toLightElements(ktElement: KtElement): List<PsiNamedElement>
+
+    fun createKtFakeLightClass(kotlinOrigin: KtClassOrObject): PsiClass
+
+    fun getRepresentativeLightMethod(psiElement: PsiElement): PsiMethod?
+
+
+    companion object {
+
+        fun getInstance(project: Project): LightClassProvider {
+            return ServiceManager.getService(project, LightClassProvider::class.java)
+        }
+
+        fun providedGetLightFieldForCompanionObject(companionObject: KtClassOrObject): PsiField? =
+            getInstance(companionObject.project).getLightFieldForCompanionObject(companionObject)
+
+        fun providedGetLightClassMethods(function: KtFunction): List<PsiMethod> =
+            getInstance(function.project).getLightClassMethods(function)
+
+        //getLightClassPropertyMethods.allDeclarations
+        fun providedGetLightClassParameterDeclarations(parameter: KtParameter): List<PsiNamedElement> =
+            getInstance(parameter.project).getLightClassParameterDeclarations(parameter)
+
+        //getLightClassPropertyMethods.allDeclarations
+        fun providedGetLightClassPropertyDeclarations(property: KtProperty): List<PsiNamedElement> =
+            getInstance(property.project).getLightClassPropertyDeclarations(property)
+
+        fun KtClassOrObject.providedToLightClassWithBuiltinMapping(): PsiClass? =
+            getInstance(project).toLightClassWithBuiltinMapping(this)
+
+        fun PsiElement.providedToLightMethods(): List<PsiMethod> =
+            getInstance(project).toLightMethods(this)
+
+        fun KtClassOrObject.providedToLightClass(): KtLightClass? =
+            getInstance(project).toLightClass(this)
+
+        fun KtElement.providedToLightElements(): List<PsiNamedElement> =
+            getInstance(project).toLightElements(this)
+
+        fun providedCreateKtFakeLightClass(kotlinOrigin: KtClassOrObject): PsiClass =
+            getInstance(kotlinOrigin.project).createKtFakeLightClass(kotlinOrigin)
+
+        fun PsiElement.providedGetRepresentativeLightMethod(): PsiMethod? =
+            getInstance(project).getRepresentativeLightMethod(this)
     }
 }
 

@@ -25,14 +25,17 @@ import com.intellij.psi.search.searches.MethodReferencesSearch
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.Processor
 import com.intellij.util.containers.nullize
-import org.jetbrains.kotlin.asJava.LightClassUtil
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetLightClassMethods
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetLightClassParameterDeclarations
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetLightClassPropertyDeclarations
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetLightFieldForCompanionObject
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightClass
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightElements
 import org.jetbrains.kotlin.asJava.elements.KtLightField
 import org.jetbrains.kotlin.asJava.elements.KtLightMember
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
 import org.jetbrains.kotlin.asJava.elements.KtLightParameter
 import org.jetbrains.kotlin.asJava.namedUnwrappedElement
-import org.jetbrains.kotlin.asJava.toLightClass
-import org.jetbrains.kotlin.asJava.toLightElements
 import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.sourcesAndLibraries
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.dataClassComponentMethodName
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.expectedDeclarationIfAny
@@ -71,7 +74,7 @@ data class KotlinReferencesSearchOptions(
         ): SearchScope {
             val kotlinOptions = (parameters as? KotlinAwareReferencesSearchParameters)?.kotlinOptions ?: Empty
             val elements = if (elementToSearch is KtDeclaration && !isOnlyKotlinSearch(parameters.scopeDeterminedByUser)) {
-                elementToSearch.toLightElements().filterDataClassComponentsIfDisabled(kotlinOptions).nullize()
+                elementToSearch.providedToLightElements().filterDataClassComponentsIfDisabled(kotlinOptions).nullize()
             } else {
                 null
             } ?: listOf(elementToSearch)
@@ -258,7 +261,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                 is KtNamedFunction, is KtSecondaryConstructor -> {
                     val name = (element as KtFunction).name
                     if (name != null) {
-                        val methods = LightClassUtil.getLightClassMethods(element)
+                        val methods = providedGetLightClassMethods(element)
                         for (method in methods) {
                             searchNamedElement(method)
                         }
@@ -268,8 +271,8 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                 }
 
                 is KtProperty -> {
-                    val propertyMethods = LightClassUtil.getLightClassPropertyMethods(element)
-                    propertyMethods.allDeclarations.forEach { searchNamedElement(it) }
+                    val propertyDeclarations = providedGetLightClassPropertyDeclarations(element)
+                    propertyDeclarations.forEach { searchNamedElement(it) }
                     processStaticsFromCompanionObject(element)
                 }
 
@@ -277,8 +280,8 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                     searchPropertyAccessorMethods(element)
                     if (element.getStrictParentOfType<KtPrimaryConstructor>() != null) {
                         // Simple parameters without val and var shouldn't be processed here because of local search scope
-                        val methods = LightClassUtil.getLightClassPropertyMethods(element)
-                        methods.allDeclarations.filterDataClassComponentsIfDisabled(kotlinOptions).forEach { searchNamedElement(it) }
+                        val parameterDeclarations = providedGetLightClassParameterDeclarations(element)
+                        parameterDeclarations.filterDataClassComponentsIfDisabled(kotlinOptions).forEach { searchNamedElement(it) }
                     }
                 }
 
@@ -306,19 +309,19 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
         }
 
         private fun searchPropertyAccessorMethods(origin: KtParameter) {
-            origin.toLightElements().filterDataClassComponentsIfDisabled(kotlinOptions).forEach { searchNamedElement(it) }
+            origin.providedToLightElements().filterDataClassComponentsIfDisabled(kotlinOptions).forEach { searchNamedElement(it) }
         }
 
         private fun processKtClassOrObject(element: KtClassOrObject) {
             val className = element.name ?: return
-            val lightClass = element.toLightClass() ?: return
+            val lightClass = element.providedToLightClass() ?: return
             searchNamedElement(lightClass, className)
 
             if (element is KtObjectDeclaration && element.isCompanion()) {
-                LightClassUtil.getLightFieldForCompanionObject(element)?.let { searchNamedElement(it) }
+                providedGetLightFieldForCompanionObject(element)?.let { searchNamedElement(it) }
 
                 if (kotlinOptions.acceptCompanionObjectMembers) {
-                    val originLightClass = element.getStrictParentOfType<KtClass>()?.toLightClass()
+                    val originLightClass = element.getStrictParentOfType<KtClass>()?.providedToLightClass()
                     if (originLightClass != null) {
                         val lightDeclarations: List<KtLightMember<*>?> =
                             originLightClass.methods.map { it as? KtLightMethod } + originLightClass.fields.map { it as? KtLightField }
@@ -338,7 +341,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                 is KtParameter -> {
                     val componentMethodName = element.dataClassComponentMethodName
                     if (componentMethodName != null) {
-                        val containingClass = element.getStrictParentOfType<KtClassOrObject>()?.toLightClass()
+                        val containingClass = element.getStrictParentOfType<KtClassOrObject>()?.providedToLightClass()
                         searchDataClassComponentUsages(
                             containingClass = containingClass,
                             componentMethodName = componentMethodName,
@@ -388,7 +391,7 @@ class KotlinReferencesSearcher : QueryExecutorBase<PsiReference, ReferencesSearc
                 .firstOrNull() as? KtObjectDeclaration ?: return emptyList()
             if (!originObject.isCompanion()) return emptyList()
             val originClass = originObject.getStrictParentOfType<KtClass>()
-            val originLightClass = originClass?.toLightClass() ?: return emptyList()
+            val originLightClass = originClass?.providedToLightClass() ?: return emptyList()
             val allMethods = originLightClass.allMethods
             return allMethods.filter { it is KtLightMethod && it.kotlinOrigin == declaration }
         }

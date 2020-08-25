@@ -28,8 +28,8 @@ import com.intellij.psi.search.searches.MethodReferencesSearch
 import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.util.FilteredQuery
 import com.intellij.util.Processor
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightClass
 import org.jetbrains.kotlin.asJava.elements.KtLightMethod
-import org.jetbrains.kotlin.asJava.toLightClass
 import org.jetbrains.kotlin.idea.findUsages.KotlinClassFindUsagesOptions
 import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesHandlerFactory
 import org.jetbrains.kotlin.idea.findUsages.KotlinFindUsagesSupport.Companion.isCallReceiverRefersToCompanionObject
@@ -93,7 +93,7 @@ class KotlinFindClassUsagesHandler(
             }
 
             if (kotlinOptions.searchConstructorUsages) {
-                classOrObject.toLightClass()?.constructors?.filterIsInstance<KtLightMethod>()?.forEach { constructor ->
+                classOrObject.providedToLightClass()?.constructors?.filterIsInstance<KtLightMethod>()?.forEach { constructor ->
                     val scope = constructor.useScope.intersectWith(options.searchScope)
                     var query = MethodReferencesSearch.search(constructor, scope, true)
                     if (kotlinOptions.isSkipImportStatements) {
@@ -179,7 +179,7 @@ class KotlinFindClassUsagesHandler(
     override fun getStringsToSearch(element: PsiElement): Collection<String> {
         val psiClass = when (element) {
             is PsiClass -> element
-            is KtClassOrObject -> getElement().toLightClass()
+            is KtClassOrObject -> getElement().providedToLightClass()
             else -> null
         } ?: return Collections.emptyList()
 

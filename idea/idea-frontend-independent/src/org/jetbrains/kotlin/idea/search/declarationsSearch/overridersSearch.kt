@@ -19,8 +19,8 @@ import com.intellij.util.MergeQuery
 import com.intellij.util.Processor
 import com.intellij.util.Query
 import org.jetbrains.kotlin.asJava.*
-import org.jetbrains.kotlin.idea.caches.lightClasses.KtFakeLightClass
-import org.jetbrains.kotlin.idea.caches.lightClasses.KtFakeLightMethod
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedGetRepresentativeLightMethod
+import org.jetbrains.kotlin.asJava.LightClassProvider.Companion.providedToLightMethods
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.findDeepestSuperMethodsNoWrapping
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.forEachKotlinOverride
 import org.jetbrains.kotlin.idea.findUsages.KotlinSearchUsagesSupport.Companion.forEachOverridingMethod
@@ -39,7 +39,7 @@ fun PsiElement.isOverridableElement(): Boolean = when (this) {
 }
 
 fun HierarchySearchRequest<*>.searchOverriders(): Query<PsiMethod> {
-    val psiMethods = runReadAction { originalElement.toLightMethods() }
+    val psiMethods = runReadAction { originalElement.providedToLightMethods() }
     if (psiMethods.isEmpty()) return EmptyQuery.getEmptyQuery()
 
     return psiMethods
@@ -102,10 +102,10 @@ fun PsiElement.toPossiblyFakeLightMethods(): List<PsiMethod> {
 
     val element = unwrapped ?: return emptyList()
 
-    val lightMethods = element.toLightMethods()
+    val lightMethods = element.providedToLightMethods()
     if (lightMethods.isNotEmpty()) return lightMethods
 
-        return if (element is KtNamedDeclaration) listOfNotNull(KtFakeLightMethod.get(element)) else emptyList()
+    return if (element is KtNamedDeclaration) listOfNotNull(KtFakeLightMethod.get(element)) else emptyList()
 }
 
 fun KtNamedDeclaration.forEachOverridingElement(
@@ -114,7 +114,7 @@ fun KtNamedDeclaration.forEachOverridingElement(
 ): Boolean {
     val ktClass = runReadAction { containingClassOrObject as? KtClass } ?: return true
 
-    toLightMethods().forEach { baseMethod ->
+    providedToLightMethods().forEach { baseMethod ->
         if (!OverridingMethodsSearch.search(baseMethod, scope.excludeKotlinSources(), true).all { processor(baseMethod, it) }) return false
     }
 
@@ -143,4 +143,4 @@ fun PsiClass.forEachDeclaredMemberOverride(processor: (superMember: PsiElement, 
 }
 
 fun findDeepestSuperMethodsKotlinAware(method: PsiElement) =
-    findDeepestSuperMethodsNoWrapping(method).mapNotNull { it.getRepresentativeLightMethod() }
+    findDeepestSuperMethodsNoWrapping(method).mapNotNull { it.providedGetRepresentativeLightMethod() }
