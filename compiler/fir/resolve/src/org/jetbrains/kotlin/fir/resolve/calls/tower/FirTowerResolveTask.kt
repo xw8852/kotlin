@@ -27,7 +27,12 @@ internal class TowerDataElementsForName(
 ) {
     val nonLocalTowerDataElements = towerDataContext.nonLocalTowerDataElements.asReversedFrozen()
     val reversedFilteredLocalScopes by lazy(LazyThreadSafetyMode.NONE) {
-        towerDataContext.localScopes.asReversed().withIndex().filter { it.value.mayContainName(name) }
+        towerDataContext.localScopes.asReversed().withIndex().filter { (_, scope) -> scope.mayContainName(name) }
+    }
+    val implicitReceivers by lazy(LazyThreadSafetyMode.NONE) {
+        nonLocalTowerDataElements.mapIndexedNotNull { index, towerDataElement ->
+            towerDataElement.implicitReceiver?.let { receiver -> IndexedValue(index, receiver) }
+        }
     }
 }
 
@@ -304,8 +309,7 @@ internal open class FirTowerResolveTask(
                     ExplicitReceiverKind.EXTENSION_RECEIVER, parentGroup
                 )
             } else {
-                for ((depth, towerDataElement) in towerDataElementsForName.nonLocalTowerDataElements.withIndex()) {
-                    val implicitReceiverValue = towerDataElement.implicitReceiver ?: continue
+                for ((depth, implicitReceiverValue) in towerDataElementsForName.implicitReceivers) {
                     processHideMembersLevel(
                         implicitReceiverValue, topLevelScope, info, index, depth,
                         ExplicitReceiverKind.NO_EXPLICIT_RECEIVER, parentGroup

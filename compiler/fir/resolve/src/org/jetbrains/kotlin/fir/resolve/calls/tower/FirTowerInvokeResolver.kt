@@ -350,8 +350,7 @@ private class InvokeFunctionResolveTask(
         invokeReceiverValue: ExpressionReceiverValue,
         parentGroupForInvokeCandidates: TowerGroup
     ) {
-        for ((depth, towerDataElement) in towerDataElementsForName.nonLocalTowerDataElements.withIndex()) {
-            val implicitReceiverValue = towerDataElement.implicitReceiver ?: continue
+        for ((depth, implicitReceiverValue) in towerDataElementsForName.implicitReceivers) {
             val towerGroup =
                 parentGroupForInvokeCandidates
                     .Implicit(depth)
