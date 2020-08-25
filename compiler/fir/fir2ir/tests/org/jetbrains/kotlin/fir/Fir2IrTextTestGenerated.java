@@ -1721,6 +1721,11 @@ public class Fir2IrTextTestGenerated extends AbstractFir2IrTextTest {
         public void testKt4373() throws Exception {
             runTest("compiler/testData/ir/irText/firProblems/kt4373.kt");
         }
+
+        @TestMetadata("streamBackwardCompatibility.kt")
+        public void testStreamBackwardCompatibility() throws Exception {
+            runTest("compiler/testData/ir/irText/firProblems/streamBackwardCompatibility.kt");
+        }
     }
 
     @TestMetadata("compiler/testData/ir/irText/lambdas")
