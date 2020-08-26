@@ -19,13 +19,13 @@ package org.jetbrains.kotlin.backend.common.lower
 import org.jetbrains.kotlin.backend.common.CommonBackendContext
 import org.jetbrains.kotlin.backend.common.FileLoweringPass
 import org.jetbrains.kotlin.backend.common.atMostOne
-import org.jetbrains.kotlin.backend.common.ir.containsNull
 import org.jetbrains.kotlin.ir.IrStatement
 import org.jetbrains.kotlin.ir.builders.*
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrStringConcatenation
 import org.jetbrains.kotlin.ir.types.IrType
+import org.jetbrains.kotlin.ir.types.isNullable
 import org.jetbrains.kotlin.ir.types.isNullableAny
 import org.jetbrains.kotlin.ir.util.constructors
 import org.jetbrains.kotlin.ir.util.functions
@@ -92,7 +92,7 @@ private class StringConcatenationTransformer(val lower: StringConcatenationLower
             0 -> blockBuilder.irString("")
             1 -> {
                 val argument = arguments[0]
-                if (argument.type.containsNull())
+                if (argument.type.isNullable())
                     blockBuilder.irCall(context.ir.symbols.extensionToString).apply {
                         extensionReceiver = argument
                     }
