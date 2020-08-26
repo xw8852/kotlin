@@ -12,20 +12,18 @@ import org.jetbrains.kotlin.fir.declarations.FirResolvePhase
 import org.jetbrains.kotlin.fir.declarations.builder.buildProperty
 import org.jetbrains.kotlin.fir.declarations.builder.buildSimpleFunction
 import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
+import org.jetbrains.kotlin.fir.declarations.isOperator
 import org.jetbrains.kotlin.fir.declarations.visibility
 import org.jetbrains.kotlin.fir.scopes.FirTypeScope
 import org.jetbrains.kotlin.fir.scopes.ProcessorAction
-import org.jetbrains.kotlin.fir.symbols.CallableId
 import org.jetbrains.kotlin.fir.symbols.impl.FirFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirNamedFunctionSymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirPropertySymbol
 import org.jetbrains.kotlin.fir.symbols.impl.FirVariableSymbol
-import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 
 class FirDelegatedMemberScope(
     private val useSiteScope: FirTypeScope,
-    private val classId: ClassId,
     private val session: FirSession
 ) : FirTypeScope() {
     override fun processFunctionsByName(name: Name, processor: (FirFunctionSymbol<*>) -> Unit) {
@@ -40,10 +38,12 @@ class FirDelegatedMemberScope(
                 session = this@FirDelegatedMemberScope.session
                 this.name = name
                 symbol = FirNamedFunctionSymbol(
-                    CallableId(classId, name),
+                    functionSymbol.callableId,
                     overriddenSymbol = functionSymbol
                 )
-                status = FirDeclarationStatusImpl(original.visibility, Modality.OPEN)
+                status = FirDeclarationStatusImpl(original.visibility, Modality.OPEN).apply {
+                    isOperator = original.isOperator
+                }
                 resolvePhase = FirResolvePhase.BODY_RESOLVE
                 returnTypeRef = original.returnTypeRef
                 receiverTypeRef = original.receiverTypeRef
@@ -67,7 +67,7 @@ class FirDelegatedMemberScope(
                 session = this@FirDelegatedMemberScope.session
                 this.name = name
                 symbol = FirPropertySymbol(
-                    CallableId(classId, name),
+                    propertySymbol.callableId,
                     overriddenSymbol = propertySymbol
                 )
                 isVar = original.isVar

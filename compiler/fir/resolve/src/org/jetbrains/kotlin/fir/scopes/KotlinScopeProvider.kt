@@ -108,7 +108,7 @@ internal fun FirClass<*>.scope(
     isFromExpectClass: Boolean = false
 ): FirTypeScope {
     val basicScope = unsubstitutedScope(useSiteSession, scopeSession).let {
-        if (delegateField != null) FirDelegatedMemberScope(it, symbol.classId, useSiteSession) else it
+        if (delegateField != null) FirDelegatedMemberScope(it, useSiteSession) else it
     }
     if (substitutor == ConeSubstitutor.Empty) return basicScope
 
