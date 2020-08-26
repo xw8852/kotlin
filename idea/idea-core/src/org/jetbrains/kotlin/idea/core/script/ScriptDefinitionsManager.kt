@@ -279,7 +279,6 @@ fun loadDefinitionsFromTemplates(
             val template = loader.loadClass(templateClassName).kotlin
             val hostConfiguration = ScriptingHostConfiguration(baseHostConfiguration) {
                 configurationDependencies(JvmDependency(templateClasspath))
-
             }
             when {
                 template.annotations.firstIsInstanceOrNull<kotlin.script.templates.ScriptTemplateDefinition>() != null -> {

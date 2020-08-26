@@ -38,6 +38,7 @@ class ScriptTemplatesFromCompilerSettingsProvider(
         project.messageBus.connect().subscribe(KotlinCompilerSettingsListener.TOPIC, object : KotlinCompilerSettingsListener {
             override fun <T> settingsChanged(newSettings: T) {
                 if (newSettings !is CompilerSettings) return
+
                 executeOnPooledThread {
                     ScriptDefinitionsManager.getInstance(project).reloadDefinitionsBy(this@ScriptTemplatesFromCompilerSettingsProvider)
                 }
