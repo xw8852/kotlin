@@ -2006,6 +2006,11 @@ public class DiagnosticsTestWithStdLibUsingJavacGenerated extends AbstractDiagno
                 runTest("compiler/testData/diagnostics/testsWithStdLib/coroutines/inference/builderInferenceForMaterializeWithExpectedType.kt");
             }
 
+            @TestMetadata("callableReferenceAndCoercionToUnit.kt")
+            public void testCallableReferenceAndCoercionToUnit() throws Exception {
+                runTest("compiler/testData/diagnostics/testsWithStdLib/coroutines/inference/callableReferenceAndCoercionToUnit.kt");
+            }
+
             @TestMetadata("callableReferenceToASuspendFunction.kt")
             public void testCallableReferenceToASuspendFunction() throws Exception {
                 runTest("compiler/testData/diagnostics/testsWithStdLib/coroutines/inference/callableReferenceToASuspendFunction.kt");
