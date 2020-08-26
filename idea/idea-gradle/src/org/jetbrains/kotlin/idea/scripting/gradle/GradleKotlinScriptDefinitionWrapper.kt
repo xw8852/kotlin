@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.idea.scripting.gradle
 
-import org.jetbrains.kotlin.config.LanguageVersion
 import org.jetbrains.kotlin.scripting.definitions.ScriptCompilationConfigurationFromDefinition
 import org.jetbrains.kotlin.scripting.definitions.ScriptDefinition
 import org.jetbrains.kotlin.scripting.resolve.KotlinScriptDefinitionFromAnnotatedTemplate
@@ -16,8 +15,9 @@ import kotlin.script.experimental.location.ScriptExpectedLocation
 class GradleKotlinScriptDefinitionWrapper(
     hostConfiguration: ScriptingHostConfiguration,
     legacyDefinition: KotlinScriptDefinitionFromAnnotatedTemplate,
-    gradleVersion: String
-) : ScriptDefinition.FromLegacy(hostConfiguration, legacyDefinition) {
+    gradleVersion: String,
+    defaultCompilerOptions: Iterable<String>
+) : ScriptDefinition.FromLegacy(hostConfiguration, legacyDefinition, defaultCompilerOptions) {
     override val compilationConfiguration by lazy {
         ScriptCompilationConfigurationFromDefinition(
             hostConfiguration,

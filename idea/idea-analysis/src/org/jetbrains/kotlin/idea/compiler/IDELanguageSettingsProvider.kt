@@ -119,8 +119,9 @@ private fun getLanguageSettingsForScripts(project: Project, file: VirtualFile, s
             ?: ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(it)
     }
 
+    val environmentCompilerOptions = scriptDefinition.defaultCompilerOptions
     val args = scriptDefinition.compilerOptions
-    return if (args.none()) {
+    return if (environmentCompilerOptions.none() && args.none()) {
         ScriptLanguageSettings(
             project.getLanguageVersionSettings(contextModule = scriptModule),
             detectDefaultTargetPlatformVersion(scriptModule?.platform)
@@ -128,6 +129,7 @@ private fun getLanguageSettingsForScripts(project: Project, file: VirtualFile, s
     } else {
         val settings = scriptDefinition.getUserData(SCRIPT_LANGUAGE_SETTINGS) ?: createCachedValue(project) {
             val compilerArguments = K2JVMCompilerArguments()
+            parseCommandLineArguments(environmentCompilerOptions.toList(), compilerArguments)
             parseCommandLineArguments(args.toList(), compilerArguments)
             // TODO: reporting
             val verSettings = compilerArguments.toLanguageVersionSettings(MessageCollector.NONE)

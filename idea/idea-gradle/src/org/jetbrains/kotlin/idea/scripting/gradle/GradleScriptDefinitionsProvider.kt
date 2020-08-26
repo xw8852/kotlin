@@ -129,18 +129,15 @@ class GradleScriptDefinitionsContributor(private val project: Project) : ScriptD
 
         private val kotlinStdLibSelector = Regex("^(kotlin-compiler-embeddable|kotlin-stdlib)-(\\d+\\.\\d+).*\\.jar\$")
 
-        fun findStdLibLanguageVersion(gradleHome: String): LanguageVersion? {
-            val libs = File(gradleHome, "lib")
-            return if (libs.exists()) {
-                libs.listFiles { file ->
+        fun findStdLibLanguageVersion(classpath: List<File>): LanguageVersion? {
+            return classpath.map { it.parentFile }.toSet().map {
+                it.listFiles { file ->
                     kotlinStdLibSelector.find(file.name) != null
                 }.firstOrNull()?.let { file ->
                     val matchResult = kotlinStdLibSelector.find(file.name) ?: return@let null
                     LanguageVersion.fromVersionString(matchResult.groupValues[2])
                 }
-            } else {
-                null
-            }
+            }.firstOrNull()
         }
     }
 
@@ -253,17 +250,26 @@ class GradleScriptDefinitionsContributor(private val project: Project) : ScriptD
             projectPath,
             GradleConstants.SYSTEM_ID
         )
+        val defaultCompilerOptions = findStdLibLanguageVersion(templateClasspath)?.let {
+            listOf("-language-version", it.versionString)
+        } ?: emptyList<String>()
         val hostConfiguration = createHostConfiguration(projectPath, gradleHome, javaHome, gradleExeSettings)
         return loadDefinitionsFromTemplates(
             listOf(templateClass),
             templateClasspath,
             hostConfiguration,
-            additionalClassPath
+            additionalClassPath,
+            defaultCompilerOptions
         ).map {
             it.asLegacyOrNull<KotlinScriptDefinitionFromAnnotatedTemplate>()?.let { legacyDef ->
                 // Expand scope for old gradle script definition
                 val version = GradleInstallationManager.getGradleVersion(gradleHome) ?: GradleVersion.current().version
-                GradleKotlinScriptDefinitionWrapper(it.hostConfiguration, legacyDef, version)
+                GradleKotlinScriptDefinitionWrapper(
+                    it.hostConfiguration,
+                    legacyDef,
+                    version,
+                    defaultCompilerOptions
+                )
             } ?: it
         }
     }
@@ -281,7 +287,7 @@ class GradleScriptDefinitionsContributor(private val project: Project) : ScriptD
                 .distinct()
         } ?: emptyList()
 
-        val environment = mutableMapOf(
+        val environment = mapOf(
             "gradleHome" to gradleHome?.let(::File),
             "gradleJavaHome" to javaHome,
 
@@ -291,11 +297,6 @@ class GradleScriptDefinitionsContributor(private val project: Project) : ScriptD
             "gradleJvmOptions" to gradleJvmOptions,
             "gradleEnvironmentVariables" to if (gradleExeSettings.isPassParentEnvs) EnvironmentUtil.getEnvironmentMap() else emptyMap()
         )
-
-        gradleHome?.let { findStdLibLanguageVersion(it) }?.let { providedLanguageVersion ->
-            environment["extraCompilerArguments"] = listOf("-language-version", providedLanguageVersion.versionString)
-        }
-
         return ScriptingHostConfiguration(defaultJvmScriptingHostConfiguration) {
             getEnvironment { environment }
         }
