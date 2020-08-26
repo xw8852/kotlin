@@ -5,6 +5,9 @@
 
 package org.jetbrains.kotlin.fir.resolve.transformers
 
+import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
@@ -64,7 +67,7 @@ fun <F : FirClass<F>> F.runSupertypeResolvePhaseForLocalClass(
     val supertypeComputationSession = SupertypeComputationSession()
     val supertypeResolverVisitor = FirSupertypeResolverVisitor(
         session, supertypeComputationSession, scopeSession,
-        ImmutableList.ofAll(currentScopeList),
+        currentScopeList.toPersistentList(),
         localClassesNavigationInfo
     )
 
@@ -171,26 +174,26 @@ private class FirSupertypeResolverVisitor(
     private val session: FirSession,
     private val supertypeComputationSession: SupertypeComputationSession,
     private val scopeSession: ScopeSession,
-    private val scopeForLocalClass: ImmutableList<FirScope>? = null,
+    private val scopeForLocalClass: PersistentList<FirScope>? = null,
     private val localClassesNavigationInfo: LocalClassesNavigationInfo? = null
 ) : FirDefaultVisitorVoid() {
     private val supertypeGenerationExtensions = session.extensionService.supertypeGenerators
 
     override fun visitElement(element: FirElement) {}
 
-    private fun prepareFileScopes(file: FirFile): ScopeImmutableList {
+    private fun prepareFileScopes(file: FirFile): ScopePersistentList {
         return supertypeComputationSession.getOrPutFileScope(file) {
-            ImmutableList.ofAll(createImportingScopes(file, session, scopeSession).asReversed())
+            createImportingScopes(file, session, scopeSession).asReversed().toPersistentList()
         }
     }
 
-    private fun prepareScopeForNestedClasses(klass: FirClass<*>): ScopeImmutableList {
+    private fun prepareScopeForNestedClasses(klass: FirClass<*>): ScopePersistentList {
         return supertypeComputationSession.getOrPutScopeForNestedClasses(klass) {
             val scopes = prepareScopes(klass)
 
             resolveAllSupertypes(klass, klass.superTypeRefs)
 
-            scopes.pushAll(createScopesForNestedClasses(klass, session, scopeSession, supertypeComputationSession))
+            scopes.addAll(createScopesForNestedClasses(klass, session, scopeSession, supertypeComputationSession))
         }
     }
 
@@ -216,28 +219,28 @@ private class FirSupertypeResolverVisitor(
         else -> emptyList()
     }
 
-    private fun prepareScopes(classLikeDeclaration: FirClassLikeDeclaration<*>): ImmutableList<FirScope> {
+    private fun prepareScopes(classLikeDeclaration: FirClassLikeDeclaration<*>): PersistentList<FirScope> {
         val classId = classLikeDeclaration.symbol.classId
 
         val result = when {
             classId.isLocal -> {
                 // Local type aliases are not supported
-                if (classLikeDeclaration !is FirClass<*>) return ImmutableList.empty()
+                if (classLikeDeclaration !is FirClass<*>) return persistentListOf()
 
                 // Local classes should be treated specially and supplied with localClassesNavigationInfo, normally
                 // But it seems to be too strict to add an assertion here
-                val navigationInfo = localClassesNavigationInfo ?: return ImmutableList.empty()
+                val navigationInfo = localClassesNavigationInfo ?: return persistentListOf()
 
                 val parent = localClassesNavigationInfo.parentForClass[classLikeDeclaration]
 
                 when {
                     parent != null -> prepareScopeForNestedClasses(parent)
-                    else -> scopeForLocalClass ?: return ImmutableList.empty()
+                    else -> scopeForLocalClass ?: return persistentListOf()
                 }
             }
             classId.isNestedClass -> {
                 val outerClassFir = classId.outerClassId?.let(session.firProvider::getFirClassifierByFqName) as? FirRegularClass
-                prepareScopeForNestedClasses(outerClassFir ?: return ImmutableList.empty())
+                prepareScopeForNestedClasses(outerClassFir ?: return persistentListOf())
             }
             else -> prepareFileScopes(session.firProvider.getFirClassifierContainerFile(classLikeDeclaration.symbol))
         }
@@ -346,8 +349,8 @@ private fun createErrorTypeRef(fir: FirElement, message: String) = buildErrorTyp
 }
 
 private class SupertypeComputationSession {
-    private val fileScopesMap = hashMapOf<FirFile, ScopeImmutableList>()
-    private val scopesForNestedClassesMap = hashMapOf<FirClass<*>, ScopeImmutableList>()
+    private val fileScopesMap = hashMapOf<FirFile, ScopePersistentList>()
+    private val scopesForNestedClassesMap = hashMapOf<FirClass<*>, ScopePersistentList>()
     private val supertypeStatusMap = linkedMapOf<FirClassLikeDeclaration<*>, SupertypeComputationStatus>()
 
     val supertypesSupplier: SupertypeSupplier = object : SupertypeSupplier() {
@@ -369,10 +372,10 @@ private class SupertypeComputationSession {
     fun getSupertypesComputationStatus(classLikeDeclaration: FirClassLikeDeclaration<*>): SupertypeComputationStatus =
         supertypeStatusMap[classLikeDeclaration] ?: SupertypeComputationStatus.NotComputed
 
-    fun getOrPutFileScope(file: FirFile, scope: () -> ScopeImmutableList): ScopeImmutableList =
+    fun getOrPutFileScope(file: FirFile, scope: () -> ScopePersistentList): ScopePersistentList =
         fileScopesMap.getOrPut(file) { scope() }
 
-    fun getOrPutScopeForNestedClasses(klass: FirClass<*>, scope: () -> ScopeImmutableList): ScopeImmutableList =
+    fun getOrPutScopeForNestedClasses(klass: FirClass<*>, scope: () -> ScopePersistentList): ScopePersistentList =
         scopesForNestedClassesMap.getOrPut(klass) { scope() }
 
     fun startComputingSupertypes(classLikeDeclaration: FirClassLikeDeclaration<*>) {
@@ -455,7 +458,6 @@ sealed class SupertypeComputationStatus {
     class Computed(val supertypeRefs: List<FirTypeRef>) : SupertypeComputationStatus()
 }
 
-private typealias ImmutableList<E> = javaslang.collection.List<E>
-private typealias ScopeImmutableList = ImmutableList<FirScope>
+private typealias ScopePersistentList = PersistentList<FirScope>
 
-private fun ScopeImmutableList.pushIfNotNull(scope: FirScope?): ScopeImmutableList = if (scope == null) this else push(scope)
+private fun ScopePersistentList.pushIfNotNull(scope: FirScope?): ScopePersistentList = if (scope == null) this else add(scope)
