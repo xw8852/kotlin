@@ -16,7 +16,6 @@
 
 package org.jetbrains.kotlin.idea.script
 
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.config.CompilerSettings
 import org.jetbrains.kotlin.idea.compiler.configuration.KotlinCompilerSettings
@@ -39,7 +38,6 @@ class ScriptTemplatesFromCompilerSettingsProvider(
         project.messageBus.connect().subscribe(KotlinCompilerSettingsListener.TOPIC, object : KotlinCompilerSettingsListener {
             override fun <T> settingsChanged(newSettings: T) {
                 if (newSettings !is CompilerSettings) return
-                ModuleManager.getInstance(project).incModificationCount()
                 executeOnPooledThread {
                     ScriptDefinitionsManager.getInstance(project).reloadDefinitionsBy(this@ScriptTemplatesFromCompilerSettingsProvider)
                 }
