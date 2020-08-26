@@ -10877,6 +10877,11 @@ public class JsCodegenBoxTestGenerated extends AbstractJsCodegenBoxTest {
             runTest("compiler/testData/codegen/box/inference/lastExpressionOfLambdaWithNothingConstraint.kt");
         }
 
+        @TestMetadata("manyFlexibleTypeParametersFromJavaAndConversions.kt")
+        public void testManyFlexibleTypeParametersFromJavaAndConversions() throws Exception {
+            runTest("compiler/testData/codegen/box/inference/manyFlexibleTypeParametersFromJavaAndConversions.kt");
+        }
+
         @TestMetadata("noCoercionToUniForNullableLambdaReturnType.kt")
         public void testNoCoercionToUniForNullableLambdaReturnType() throws Exception {
             runTest("compiler/testData/codegen/box/inference/noCoercionToUniForNullableLambdaReturnType.kt");
