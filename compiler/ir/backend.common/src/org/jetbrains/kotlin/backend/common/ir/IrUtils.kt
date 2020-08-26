@@ -25,8 +25,10 @@ import org.jetbrains.kotlin.ir.expressions.*
 import org.jetbrains.kotlin.ir.expressions.impl.IrDelegatingConstructorCallImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrGetValueImpl
 import org.jetbrains.kotlin.ir.expressions.impl.IrInstanceInitializerCallImpl
+import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSymbol
+import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
 import org.jetbrains.kotlin.ir.symbols.impl.IrSimpleFunctionSymbolImpl
 import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.*
@@ -638,5 +640,15 @@ private fun computeAllOverridden(function: IrSimpleFunction, result: MutableSet<
         for (override in function.overriddenSymbols) {
             computeAllOverridden(override.owner, result)
         }
+    }
+}
+
+fun IrType.containsNull(): Boolean = when {
+    this !is IrSimpleType -> true
+    this.hasQuestionMark -> true
+    else -> when (val classifier = this.classifier) {
+        is IrClassSymbol -> false
+        is IrTypeParameterSymbol -> classifier.owner.superTypes.any { it.containsNull() }
+        else -> error(classifier)
     }
 }
